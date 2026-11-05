@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import io
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -12,15 +13,16 @@ from unittest import mock
 
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
-SCRIPT_PATH = SKILL_ROOT / "scripts" / "git_latest_code.py"
-SPEC = importlib.util.spec_from_file_location("git_latest_code", SCRIPT_PATH)
+SCRIPT_PATH = SKILL_ROOT / "scripts" / "git_safe_collaboration.py"
+LEGACY_SCRIPT_PATH = SKILL_ROOT.parent / "git-latest-code-check" / "scripts" / "git_latest_code.py"
+SPEC = importlib.util.spec_from_file_location("git_safe_collaboration", SCRIPT_PATH)
 assert SPEC is not None and SPEC.loader is not None
-git_latest_code = importlib.util.module_from_spec(SPEC)
-sys.modules[SPEC.name] = git_latest_code
-SPEC.loader.exec_module(git_latest_code)
+git_safe_collaboration = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = git_safe_collaboration
+SPEC.loader.exec_module(git_safe_collaboration)
 
 
-class GitLatestCodeTests(unittest.TestCase):
+class GitSafeCollaborationTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
@@ -74,29 +76,83 @@ class GitLatestCodeTests(unittest.TestCase):
         completed = mock.Mock(returncode=0, stdout="", stderr="")
 
         with mock.patch.object(
-            git_latest_code.subprocess,
+            git_safe_collaboration.subprocess,
             "run",
             return_value=completed,
         ) as run:
-            git_latest_code.run_git(self.worktree, ["status"])
+            git_safe_collaboration.run_git(self.worktree, ["status"])
 
         environment = run.call_args.kwargs["env"]
         self.assertEqual("0", environment["GIT_OPTIONAL_LOCKS"])
         self.assertEqual("1", environment["GIT_NO_LAZY_FETCH"])
 
+    @unittest.skipUnless(LEGACY_SCRIPT_PATH.is_file(), "legacy CLI package not installed")
+    def test_legacy_cli_forwards_arguments_output_and_exit_codes_readonly(self) -> None:
+        scenarios = (
+            ("inspect", ("--expect-branch", "main")),
+            ("inspect", ("--expect-branch", "wrong-branch")),
+            ("check", ()),
+            ("verify-push", ("--remote", "origin", "--branch", "main")),
+            ("check", ("--remote", "origin", "--branch", "missing")),
+            ("inspect", ("--expect-head", "invalid")),
+        )
+        for command, args in scenarios:
+            with self.subTest(command=command, args=args):
+                before = self.readonly_snapshot()
+                canonical = self.run_tool(command, None, *args)
+                legacy = subprocess.run(
+                    [sys.executable, str(LEGACY_SCRIPT_PATH), command,
+                     "--repo", str(self.worktree), *args],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                    encoding="utf-8", errors="replace", check=False,
+                )
+                self.assertEqual(canonical.returncode, legacy.returncode, legacy.stderr)
+                self.assertEqual(canonical.stdout, legacy.stdout)
+                self.assertEqual(canonical.stderr, legacy.stderr)
+                self.assertEqual(before, self.readonly_snapshot())
+
+    @unittest.skipUnless(LEGACY_SCRIPT_PATH.is_file(), "legacy CLI package not installed")
+    def test_legacy_cli_requires_canonical_installation(self) -> None:
+        legacy_dir = self.root / "legacy without canonical" / "scripts"
+        legacy_dir.mkdir(parents=True)
+        shim = legacy_dir / "git_latest_code.py"
+        shutil.copy2(LEGACY_SCRIPT_PATH, shim)
+        result = subprocess.run(
+            [sys.executable, str(shim), "inspect", "--repo", str(self.worktree)],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+            encoding="utf-8", errors="replace", check=False,
+        )
+        self.assertEqual(2, result.returncode)
+        self.assertIn("STATUS ERROR", result.stdout)
+        self.assertIn("install the adjacent git-safe-collaboration", result.stdout)
+
+    @unittest.skipUnless(LEGACY_SCRIPT_PATH.is_file(), "legacy CLI package not installed")
+    def test_renamed_entrypoints_forward_update_to_same_implementation(self) -> None:
+        expected_sha = self.publish_change("legacy forwarded update\n")
+        before = self.git(self.worktree, "rev-parse", "HEAD").stdout.strip()
+        result = subprocess.run(
+            [sys.executable, str(LEGACY_SCRIPT_PATH), "update", "--repo", str(self.worktree),
+             "--expect-branch", "main", "--expect-head", before],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+            encoding="utf-8", errors="replace", check=False,
+        )
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("STATUS UPDATED", result.stdout)
+        self.assertEqual(expected_sha, self.git(self.worktree, "rev-parse", "HEAD").stdout.strip())
+
     def test_run_git_preserves_lazy_fetch_policy_for_approved_write(self) -> None:
         completed = mock.Mock(returncode=0, stdout="", stderr="")
 
         with mock.patch.dict(
-            git_latest_code.os.environ,
+            git_safe_collaboration.os.environ,
             {"GIT_NO_LAZY_FETCH": "caller-policy"},
             clear=True,
         ), mock.patch.object(
-            git_latest_code.subprocess,
+            git_safe_collaboration.subprocess,
             "run",
             return_value=completed,
         ) as run:
-            git_latest_code.run_git(
+            git_safe_collaboration.run_git(
                 self.worktree,
                 ["merge", "--ff-only", "refs/remotes/origin/main"],
                 allow_lazy_fetch=True,
@@ -355,8 +411,8 @@ class GitLatestCodeTests(unittest.TestCase):
 
     def test_update_stops_when_worktree_changes_during_fetch(self) -> None:
         self.publish_change("remote before concurrent work\n")
-        repository = git_latest_code.find_repository(str(self.worktree))
-        actual_fetch = git_latest_code.fetch_selected_branch
+        repository = git_safe_collaboration.find_repository(str(self.worktree))
+        actual_fetch = git_safe_collaboration.fetch_selected_branch
 
         def fetch_and_modify(root: Path, target: object) -> object:
             result = actual_fetch(root, target)
@@ -365,11 +421,11 @@ class GitLatestCodeTests(unittest.TestCase):
 
         output = io.StringIO()
         with redirect_stdout(output), mock.patch.object(
-            git_latest_code,
+            git_safe_collaboration,
             "fetch_selected_branch",
             side_effect=fetch_and_modify,
         ):
-            result = git_latest_code.update_repository(repository, None, None)
+            result = git_safe_collaboration.update_repository(repository, None, None)
 
         self.assertEqual(1, result)
         self.assertIn("STATUS WORKTREE_CHANGED", output.getvalue())
@@ -381,21 +437,21 @@ class GitLatestCodeTests(unittest.TestCase):
     def test_update_stops_when_branch_detaches_during_fetch(self) -> None:
         self.publish_change("remote before branch change\n")
         local_sha = self.git(self.worktree, "rev-parse", "HEAD").stdout.strip()
-        actual_fetch = git_latest_code.fetch_selected_branch
+        actual_fetch = git_safe_collaboration.fetch_selected_branch
 
         def fetch_and_detach(root: Path, target: object) -> object:
             result = actual_fetch(root, target)
             self.git(root, "checkout", "--detach")
             return result
 
-        repository = git_latest_code.find_repository(str(self.worktree))
+        repository = git_safe_collaboration.find_repository(str(self.worktree))
         output = io.StringIO()
         with redirect_stdout(output), mock.patch.object(
-            git_latest_code,
+            git_safe_collaboration,
             "fetch_selected_branch",
             side_effect=fetch_and_detach,
         ):
-            result = git_latest_code.update_repository(repository, None, None)
+            result = git_safe_collaboration.update_repository(repository, None, None)
 
         self.assertEqual(1, result)
         self.assertIn("STATUS WORKTREE_CHANGED", output.getvalue())
@@ -405,7 +461,7 @@ class GitLatestCodeTests(unittest.TestCase):
     def test_update_stops_when_remote_moves_before_fetch(self) -> None:
         first_remote_sha = self.publish_change("first remote update\n")
         local_sha = self.git(self.worktree, "rev-parse", "HEAD").stdout.strip()
-        actual_fetch = git_latest_code.fetch_selected_branch
+        actual_fetch = git_safe_collaboration.fetch_selected_branch
         fetch_count = 0
 
         def move_remote_then_fetch(root: Path, target: object) -> object:
@@ -414,14 +470,14 @@ class GitLatestCodeTests(unittest.TestCase):
             self.publish_change("competing remote update\n")
             return actual_fetch(root, target)
 
-        repository = git_latest_code.find_repository(str(self.worktree))
+        repository = git_safe_collaboration.find_repository(str(self.worktree))
         output = io.StringIO()
         with redirect_stdout(output), mock.patch.object(
-            git_latest_code,
+            git_safe_collaboration,
             "fetch_selected_branch",
             side_effect=move_remote_then_fetch,
         ):
-            result = git_latest_code.update_repository(repository, None, None)
+            result = git_safe_collaboration.update_repository(repository, None, None)
 
         self.assertEqual(1, result)
         self.assertEqual(1, fetch_count)
@@ -465,8 +521,8 @@ class GitLatestCodeTests(unittest.TestCase):
 
     def test_update_reports_remote_movement_without_retry(self) -> None:
         self.publish_change("moving remote\n")
-        repository = git_latest_code.find_repository(str(self.worktree))
-        actual_reader = git_latest_code.read_remote_sha
+        repository = git_safe_collaboration.find_repository(str(self.worktree))
+        actual_reader = git_safe_collaboration.read_remote_sha
         call_count = 0
 
         def moved_remote(root: Path, target: object) -> str:
@@ -477,11 +533,11 @@ class GitLatestCodeTests(unittest.TestCase):
 
         output = io.StringIO()
         with redirect_stdout(output), mock.patch.object(
-            git_latest_code,
+            git_safe_collaboration,
             "read_remote_sha",
             side_effect=moved_remote,
         ):
-            result = git_latest_code.update_repository(repository, None, None)
+            result = git_safe_collaboration.update_repository(repository, None, None)
 
         self.assertEqual(1, result)
         self.assertEqual(2, call_count)
@@ -554,14 +610,14 @@ class GitLatestCodeTests(unittest.TestCase):
 
     def run_update_hook(self, name: str, hook: object) -> tuple[int, str]:
         output = io.StringIO()
-        with redirect_stdout(output), mock.patch.object(git_latest_code, name, side_effect=hook):
-            code = git_latest_code.update_repository(self.worktree, None, None)
+        with redirect_stdout(output), mock.patch.object(git_safe_collaboration, name, side_effect=hook):
+            code = git_safe_collaboration.update_repository(self.worktree, None, None)
         return code, output.getvalue()
 
     def test_update_remote_deleted_before_fetch(self) -> None:
         self.publish_change("delete before fetch\n")
         before = self.git(self.worktree, "rev-parse", "HEAD").stdout.strip()
-        actual = git_latest_code.fetch_selected_branch
+        actual = git_safe_collaboration.fetch_selected_branch
         def hook(root, target):
             self.git(self.remote, "update-ref", "-d", "refs/heads/main")
             return actual(root, target)
@@ -574,7 +630,7 @@ class GitLatestCodeTests(unittest.TestCase):
     def test_update_remote_deleted_after_fetch_stops_before_merge(self) -> None:
         self.publish_change("delete after fetch\n")
         before = self.git(self.worktree, "rev-parse", "HEAD").stdout.strip()
-        actual = git_latest_code.fetch_selected_branch
+        actual = git_safe_collaboration.fetch_selected_branch
         def hook(root, target):
             result = actual(root, target)
             self.git(self.remote, "update-ref", "-d", "refs/heads/main")
@@ -587,7 +643,7 @@ class GitLatestCodeTests(unittest.TestCase):
     def test_update_operation_appears_during_fetch(self) -> None:
         self.publish_change("operation during fetch\n")
         before = self.git(self.worktree, "rev-parse", "HEAD").stdout.strip()
-        actual = git_latest_code.fetch_selected_branch
+        actual = git_safe_collaboration.fetch_selected_branch
         def hook(root, target):
             result = actual(root, target)
             (root / ".git" / "sequencer").mkdir()
@@ -599,7 +655,7 @@ class GitLatestCodeTests(unittest.TestCase):
 
     def test_update_post_merge_deleted_reports_actual_head(self) -> None:
         expected = self.publish_change("post merge deletion\n")
-        actual = git_latest_code.run_git
+        actual = git_safe_collaboration.run_git
         def hook(root, args, **kwargs):
             result = actual(root, args, **kwargs)
             if args[0] == "merge":
@@ -613,7 +669,7 @@ class GitLatestCodeTests(unittest.TestCase):
 
     def test_update_post_merge_operation_stops_verification(self) -> None:
         expected = self.publish_change("post merge operation\n")
-        actual = git_latest_code.run_git
+        actual = git_safe_collaboration.run_git
         def hook(root, args, **kwargs):
             result = actual(root, args, **kwargs)
             if args[0] == "merge":
@@ -625,7 +681,7 @@ class GitLatestCodeTests(unittest.TestCase):
         self.assertIn(f"local: {expected}", output)
 
     def test_update_fetch_failure_diagnoses_unavailable_without_retry(self) -> None:
-        actual = git_latest_code.fetch_selected_branch
+        actual = git_safe_collaboration.fetch_selected_branch
         calls = []
         def hook(root, target):
             calls.append(target)
@@ -682,12 +738,12 @@ class GitLatestCodeTests(unittest.TestCase):
     def test_update_operation_appears_during_initial_remote_query(self) -> None:
         self.publish_change("operation before fetch\n")
         before = self.git(self.worktree, "rev-parse", "HEAD").stdout.strip()
-        actual = git_latest_code.read_remote_sha
+        actual = git_safe_collaboration.read_remote_sha
         def hook(root, target):
             result = actual(root, target)
             (root / ".git" / "sequencer").mkdir()
             return result
-        with mock.patch.object(git_latest_code, "fetch_selected_branch") as fetch:
+        with mock.patch.object(git_safe_collaboration, "fetch_selected_branch") as fetch:
             code, output = self.run_update_hook("read_remote_sha", hook)
         fetch.assert_not_called()
         self.assertEqual(1, code)
@@ -696,7 +752,7 @@ class GitLatestCodeTests(unittest.TestCase):
 
     def test_update_head_changes_during_fetch_stops_before_merge(self) -> None:
         self.publish_change("head change during fetch\n")
-        actual = git_latest_code.fetch_selected_branch
+        actual = git_safe_collaboration.fetch_selected_branch
         expected = []
         def hook(root, target):
             result = actual(root, target)
@@ -710,7 +766,7 @@ class GitLatestCodeTests(unittest.TestCase):
 
     def test_update_post_merge_unavailable_reports_actual_head(self) -> None:
         expected = self.publish_change("post merge access failure\n")
-        actual = git_latest_code.run_git
+        actual = git_safe_collaboration.run_git
         def hook(root, args, **kwargs):
             result = actual(root, args, **kwargs)
             if args[0] == "merge":
@@ -726,37 +782,37 @@ class GitLatestCodeTests(unittest.TestCase):
         output = io.StringIO()
         before = self.readonly_snapshot()
         with redirect_stdout(output), mock.patch.object(
-            git_latest_code, "is_ancestor", side_effect=git_latest_code.GitError("missing parent")
+            git_safe_collaboration, "is_ancestor", side_effect=git_safe_collaboration.GitError("missing parent")
         ):
-            code = git_latest_code.verify_push(self.worktree, "origin", "main")
+            code = git_safe_collaboration.verify_push(self.worktree, "origin", "main")
         self.assertEqual(1, code)
         self.assertIn("STATUS REMOTE_DIFFERS", output.getvalue())
         self.assertIn("further verification", output.getvalue())
         self.assertEqual(before, self.readonly_snapshot())
 
     def test_verify_push_stops_if_head_changes_during_remote_query(self) -> None:
-        actual = git_latest_code.read_remote_sha
+        actual = git_safe_collaboration.read_remote_sha
         expected = []
         def hook(root, target, endpoint=None):
             sha = actual(root, target, endpoint)
             expected.append(self.commit_local_change("concurrent push head\n"))
             return sha
         output = io.StringIO()
-        with redirect_stdout(output), mock.patch.object(git_latest_code, "read_remote_sha", side_effect=hook):
-            code = git_latest_code.verify_push(self.worktree, "origin", "main")
+        with redirect_stdout(output), mock.patch.object(git_safe_collaboration, "read_remote_sha", side_effect=hook):
+            code = git_safe_collaboration.verify_push(self.worktree, "origin", "main")
         self.assertEqual(1, code)
         self.assertIn("STATUS WORKTREE_CHANGED", output.getvalue())
         self.assertIn(f"local: {expected[0]}", output.getvalue())
 
     def test_verify_push_stops_if_operation_appears_during_remote_query(self) -> None:
-        actual = git_latest_code.read_remote_sha
+        actual = git_safe_collaboration.read_remote_sha
         def hook(root, target, endpoint=None):
             sha = actual(root, target, endpoint)
             (root / ".git" / "sequencer").mkdir()
             return sha
         output = io.StringIO()
-        with redirect_stdout(output), mock.patch.object(git_latest_code, "read_remote_sha", side_effect=hook):
-            code = git_latest_code.verify_push(self.worktree, "origin", "main")
+        with redirect_stdout(output), mock.patch.object(git_safe_collaboration, "read_remote_sha", side_effect=hook):
+            code = git_safe_collaboration.verify_push(self.worktree, "origin", "main")
         self.assertEqual(1, code)
         self.assertIn("STATUS GIT_OPERATION_IN_PROGRESS", output.getvalue())
         self.assertTrue((self.worktree / ".git" / "sequencer").exists())
@@ -767,9 +823,9 @@ class GitLatestCodeTests(unittest.TestCase):
         before = self.readonly_snapshot()
         output = io.StringIO()
         with redirect_stdout(output), mock.patch.object(
-            git_latest_code, "is_ancestor", side_effect=git_latest_code.GitError("local object error")
+            git_safe_collaboration, "is_ancestor", side_effect=git_safe_collaboration.GitError("local object error")
         ):
-            code = git_latest_code.check_repository(self.worktree, None, None)
+            code = git_safe_collaboration.check_repository(self.worktree, None, None)
         self.assertEqual(2, code)
         for expected in ("STATUS ERROR", "target: origin/main", local_sha, remote_sha, "dirty: false"):
             self.assertIn(expected, output.getvalue())
@@ -777,11 +833,11 @@ class GitLatestCodeTests(unittest.TestCase):
 
     def test_update_merge_timeout_after_moving_head_reports_actual_state(self) -> None:
         expected = self.publish_change("merge timeout\n")
-        actual = git_latest_code.run_git
+        actual = git_safe_collaboration.run_git
         def hook(root, args, **kwargs):
             result = actual(root, args, **kwargs)
             if args[0] == "merge":
-                raise git_latest_code.GitError("git command timed out")
+                raise git_safe_collaboration.GitError("git command timed out")
             return result
         code, output = self.run_update_hook("run_git", hook)
         self.assertEqual(2, code)
@@ -818,13 +874,13 @@ class GitLatestCodeTests(unittest.TestCase):
     def test_local_inspect_handles_dirty_work_without_network(self) -> None:
         (self.worktree / "untracked.txt").write_text("existing task work\n", encoding="utf-8")
         before = self.readonly_snapshot()
-        actual = git_latest_code.run_git
+        actual = git_safe_collaboration.run_git
         def local_only(root, args, **kwargs):
             self.assertNotIn(args[0], ("ls-remote", "fetch", "merge", "push"))
             return actual(root, args, **kwargs)
         output = io.StringIO()
-        with redirect_stdout(output), mock.patch.object(git_latest_code, "run_git", side_effect=local_only):
-            code = git_latest_code.inspect_repository(self.worktree, "main")
+        with redirect_stdout(output), mock.patch.object(git_safe_collaboration, "run_git", side_effect=local_only):
+            code = git_safe_collaboration.inspect_repository(self.worktree, "main")
         self.assertEqual(0, code)
         self.assertIn("STATUS LOCAL_STATE", output.getvalue())
         self.assertIn("dirty: true", output.getvalue())
@@ -903,19 +959,19 @@ class GitLatestCodeTests(unittest.TestCase):
         self.assertEqual("test", self.git(self.worktree, "branch", "--show-current").stdout.strip())
 
     def test_malformed_and_timeout_remote_results_are_unavailable(self) -> None:
-        for result in (git_latest_code.GitResult(0, "malformed refs/heads/main", ""),
-                       git_latest_code.GitResult(128, "", "authentication failed")):
-            actual = git_latest_code.run_git
+        for result in (git_safe_collaboration.GitResult(0, "malformed refs/heads/main", ""),
+                       git_safe_collaboration.GitResult(128, "", "authentication failed")):
+            actual = git_safe_collaboration.run_git
             def hook(root, args, **kwargs):
                 return result if args[0] == "ls-remote" else actual(root, args, **kwargs)
             output = io.StringIO()
-            with redirect_stdout(output), mock.patch.object(git_latest_code, "run_git", side_effect=hook):
-                code = git_latest_code.check_repository(self.worktree, None, None)
+            with redirect_stdout(output), mock.patch.object(git_safe_collaboration, "run_git", side_effect=hook):
+                code = git_safe_collaboration.check_repository(self.worktree, None, None)
             self.assertEqual(2, code)
             self.assertIn("STATUS REMOTE_UNAVAILABLE", output.getvalue())
-        with mock.patch.object(git_latest_code.subprocess, "run", side_effect=subprocess.TimeoutExpired("git", 30)):
-            with self.assertRaises(git_latest_code.GitError):
-                git_latest_code.run_git(self.worktree, ["ls-remote"])
+        with mock.patch.object(git_safe_collaboration.subprocess, "run", side_effect=subprocess.TimeoutExpired("git", 30)):
+            with self.assertRaises(git_safe_collaboration.GitError):
+                git_safe_collaboration.run_git(self.worktree, ["ls-remote"])
 
 
 if __name__ == "__main__":

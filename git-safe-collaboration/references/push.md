@@ -5,7 +5,7 @@ First establish authorization and repository PR rules. Passing verification neit
 Identify the actual remote, destination branch and expected local branch/HEAD for this push; the destination can differ from development upstream. Announce and run:
 
 ```text
-py -3 "<skill-directory>\scripts\git_latest_code.py" verify-push --repo "<repository>" --remote "<remote>" --branch "<destination>" --expect-branch "<source-local-branch>" --expect-head "<current-full-SHA>"
+py -3 "<skill-directory>\scripts\git_safe_collaboration.py" verify-push --repo "<repository>" --remote "<remote>" --branch "<destination>" --expect-branch "<source-local-branch>" --expect-head "<current-full-SHA>"
 ```
 
 The helper reads git remote get-url --push --all and queries the actual push address, not necessarily the fetch address. Multiple addresses, complex/multiple refspecs or destinations require a single explicit target first. Do not change configuration or silently choose.

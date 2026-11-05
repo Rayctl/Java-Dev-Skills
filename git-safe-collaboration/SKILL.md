@@ -1,11 +1,11 @@
 ---
-name: git-latest-code-check
+name: git-safe-collaboration
 description: Safely coordinate Git development targets, commit provenance, integration, and push verification in a confirmed repository.
 ---
 
 # Git Safe Collaboration
 
-Compatibility identifier: `$git-latest-code-check`. This is a Git workflow guard, not a general command cookbook or business-design authority.
+Invoke as `$git-safe-collaboration`. This is a Git workflow guard, not a general command cookbook or business-design authority.
 
 Use for substantive code planning/modification in an already-confirmed worktree, or an explicit Git operation. The caller confirms only the current directory or user-provided repository path with `git rev-parse --is-inside-work-tree`. Never search unrelated directories. No repository: silently skip. Ordinary explanations and fixed commit/PR/tag analysis do not require a development freshness check.
 
@@ -26,7 +26,7 @@ These are distinct roles. Upstream or current checkout does not establish the de
 Before a new edit batch or Git mutation, locally recheck the branch/HEAD/operation state against the target for that action. Use the helper with the confirmed branch:
 
 ```text
-py -3 "<skill-directory>\scripts\git_latest_code.py" inspect --repo "<repository>" --expect-branch "<local-branch>" --expect-head "<observed-full-SHA>"
+py -3 "<skill-directory>\scripts\git_safe_collaboration.py" inspect --repo "<repository>" --expect-branch "<local-branch>" --expect-head "<observed-full-SHA>"
 ```
 
 `--expect-head` is optional; refresh the expected observation after an intentional verified commit/update, without replacing user-selected comparison bases. Never overwrite a confirmed development branch with the current branch merely to make a guard pass. `WRONG_BRANCH` or unexpected HEAD change stops the action; do not switch or discard automatically. `LOCAL_STATE` is only a local observation, not remote verification or a missing-target exemption. A check's `CURRENT` result is not proof of a correct task branch.

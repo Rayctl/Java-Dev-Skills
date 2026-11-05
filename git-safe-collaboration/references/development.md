@@ -11,7 +11,7 @@ Read branch.remote/merge even if cached tracking refs were pruned. The helper qu
 Run:
 
 ```text
-py -3 "<skill-directory>\scripts\git_latest_code.py" check --repo "<repository>" --expect-branch "<development-branch>"
+py -3 "<skill-directory>\scripts\git_safe_collaboration.py" check --repo "<repository>" --expect-branch "<development-branch>"
 ```
 
 Pass an explicitly selected --remote / --branch pair consistently to subsequent check/update calls. The helper accepts that pair as caller-confirmed, not as an interactive choice.
@@ -47,7 +47,7 @@ Repeat the remote check when the user requests it, the repository/branch/target 
 Only clean BEHIND authorizes one automatic attempt under the standing policy. Announce first: repository, branch, target, actual observed status, available local/remote short commits, clean state, one selected fetch plus merge --ff-only if safe. Clean REMOTE_DIFFERS requires task-specific approval and must be described as uncertain ancestry. In a mutation-prohibiting mode, defer the update.
 
 ```text
-py -3 "<skill-directory>\scripts\git_latest_code.py" update --repo "<repository>" --expect-branch "<development-branch>" --expect-head "<observed-full-SHA>"
+py -3 "<skill-directory>\scripts\git_safe_collaboration.py" update --repo "<repository>" --expect-branch "<development-branch>" --expect-head "<observed-full-SHA>"
 ```
 
 Retain the same explicit target pair if used during check. Reject all staged, tracked, and untracked changes. The helper rejects unfinished operations, unresolved/deleted targets, divergence, non-fast-forward rewrites, concurrent local/remote movement; it distinguishes branch absence from access failure before fetch, after fetch failure, and after merge. No retry. Never substitute stash, reset, rebase, forced fetch, ordinary merge, branch switch, or upstream configuration for this update.
