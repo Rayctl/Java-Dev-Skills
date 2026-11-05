@@ -11,7 +11,7 @@ import sys
 from typing import Any
 
 
-SCHEMA_VERSION = 1
+SUPPORTED_SCHEMA_VERSIONS = {1, 2}
 CASE_ID_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 ALLOWED_MODES = {"dialogue", "direct-planning", "implementation"}
 KNOWN_TRIGGERS = {
@@ -42,6 +42,8 @@ REQUIRED_CASE_FIELDS = {
     "disallowed_decisions",
     "prompt",
 }
+OPTIONAL_CASE_FIELDS = {"followups"}
+FOLLOWUP_FIELDS = {"prompt", "expected_decisions", "disallowed_decisions"}
 
 
 def non_empty_string(value: Any) -> bool:
@@ -63,7 +65,7 @@ def validate_catalog(payload: Any) -> int:
     schema_version = payload["schema_version"]
     if (
         type(schema_version) is not int
-        or schema_version != SCHEMA_VERSION
+        or schema_version not in SUPPORTED_SCHEMA_VERSIONS
     ):
         raise ValueError("schema_version_unsupported")
 
@@ -73,7 +75,11 @@ def validate_catalog(payload: Any) -> int:
 
     case_ids: set[str] = set()
     for index, case in enumerate(cases, start=1):
-        if not isinstance(case, dict) or set(case) != REQUIRED_CASE_FIELDS:
+        if (
+            not isinstance(case, dict)
+            or not REQUIRED_CASE_FIELDS.issubset(case)
+            or set(case) - REQUIRED_CASE_FIELDS - OPTIONAL_CASE_FIELDS
+        ):
             raise ValueError(f"case_{index}_fields_invalid")
 
         case_id = case["id"]
@@ -94,6 +100,21 @@ def validate_catalog(payload: Any) -> int:
             raise ValueError(f"case_{index}_trigger_unknown")
         validate_string_list(case["expected_decisions"], "expected_decisions", index)
         validate_string_list(case["disallowed_decisions"], "disallowed_decisions", index)
+
+        if "followups" in case:
+            if schema_version < 2:
+                raise ValueError(f"case_{index}_followups_require_schema_2")
+            followups = case["followups"]
+            if not isinstance(followups, list) or not followups:
+                raise ValueError(f"case_{index}_followups_must_be_non_empty_list")
+            for turn, followup in enumerate(followups, start=1):
+                prefix = f"case_{index}_followup_{turn}"
+                if not isinstance(followup, dict) or set(followup) != FOLLOWUP_FIELDS:
+                    raise ValueError(f"{prefix}_fields_invalid")
+                if not non_empty_string(followup["prompt"]):
+                    raise ValueError(f"{prefix}_prompt_invalid")
+                for field in ("expected_decisions", "disallowed_decisions"):
+                    validate_string_list(followup[field], f"followup_{turn}_{field}", index)
 
     return len(cases)
 

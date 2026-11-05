@@ -789,6 +789,119 @@ class GitLatestCodeTests(unittest.TestCase):
             self.assertIn(value, output)
         self.assertEqual(expected, self.git(self.worktree, "rev-parse", "HEAD").stdout.strip())
 
+    def test_expected_branch_blocks_synced_integration_branch_before_remote_access(self) -> None:
+        self.git(self.worktree, "switch", "-c", "test")
+        self.git(self.worktree, "branch", "--set-upstream-to=origin/main")
+        self.assert_readonly("check", "CURRENT", 0)
+        self.git(self.worktree, "remote", "set-url", "origin", str(self.root / "absent.git"))
+        for command in ("inspect", "check", "update", "verify-push"):
+            args = ["--expect-branch", "development"]
+            if command == "verify-push":
+                args.extend(("--remote", "origin", "--branch", "main"))
+            self.assert_readonly(command, "WRONG_BRANCH", 1, *args)
+
+    def test_expected_head_stops_all_commands_without_mutation(self) -> None:
+        for command in ("inspect", "check", "update", "verify-push"):
+            args = ["--expect-branch", "main", "--expect-head", "f" * 40]
+            if command == "verify-push":
+                args.extend(("--remote", "origin", "--branch", "main"))
+            self.assert_readonly(command, "WORKTREE_CHANGED", 1, *args)
+
+    def test_local_inspect_does_not_bypass_missing_development_target(self) -> None:
+        self.git(self.worktree, "branch", "--unset-upstream")
+        self.git(self.worktree, "remote", "set-url", "origin", str(self.root / "absent.git"))
+        self.assert_readonly("inspect", "LOCAL_STATE", 0, "--expect-branch", "main")
+        self.assert_readonly("check", "NO_UPSTREAM", 1, "--expect-branch", "main")
+        self.assert_readonly("verify-push", "REMOTE_UNAVAILABLE", 2,
+                             "--remote", "origin", "--branch", "main")
+
+    def test_local_inspect_handles_dirty_work_without_network(self) -> None:
+        (self.worktree / "untracked.txt").write_text("existing task work\n", encoding="utf-8")
+        before = self.readonly_snapshot()
+        actual = git_latest_code.run_git
+        def local_only(root, args, **kwargs):
+            self.assertNotIn(args[0], ("ls-remote", "fetch", "merge", "push"))
+            return actual(root, args, **kwargs)
+        output = io.StringIO()
+        with redirect_stdout(output), mock.patch.object(git_latest_code, "run_git", side_effect=local_only):
+            code = git_latest_code.inspect_repository(self.worktree, "main")
+        self.assertEqual(0, code)
+        self.assertIn("STATUS LOCAL_STATE", output.getvalue())
+        self.assertIn("dirty: true", output.getvalue())
+        self.assertIn("remote not queried", output.getvalue())
+        self.assertEqual(before, self.readonly_snapshot())
+
+    def test_local_inspect_keeps_operation_marker_and_reports_detached(self) -> None:
+        self.git(self.worktree, "checkout", "--detach")
+        self.assert_readonly("inspect", "DETACHED", 1)
+        marker = self.worktree / ".git" / "sequencer"
+        marker.mkdir()
+        self.assert_readonly("inspect", "GIT_OPERATION_IN_PROGRESS", 1, "--expect-branch", "main")
+        self.assertTrue(marker.exists())
+
+    def test_expected_state_accepts_current_head_and_preserves_upstream(self) -> None:
+        sha = self.git(self.worktree, "rev-parse", "HEAD").stdout.strip()
+        args = ("--expect-branch", "main", "--expect-head", sha)
+        self.assert_readonly("inspect", "LOCAL_STATE", 0, *args)
+        self.assert_readonly("check", "CURRENT", 0, *args)
+        self.assert_readonly("verify-push", "CURRENT", 0, *args,
+                             "--remote", "origin", "--branch", "main")
+        self.assert_readonly("inspect", "ERROR", 2, "--expect-head", "HEAD")
+
+    def test_expected_update_fast_forwards_and_old_observation_becomes_stale(self) -> None:
+        before = self.git(self.worktree, "rev-parse", "HEAD").stdout.strip()
+        after = self.publish_change("guarded update\n")
+        result = self.run_tool("update", None, "--expect-branch", "main", "--expect-head", before)
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("STATUS UPDATED", result.stdout)
+        self.assertEqual(after, self.git(self.worktree, "rev-parse", "HEAD").stdout.strip())
+        self.assert_readonly("inspect", "WORKTREE_CHANGED", 1, "--expect-head", before)
+        self.assert_readonly("inspect", "LOCAL_STATE", 0, "--expect-head", after)
+
+    def test_real_cherry_pick_preserves_author_and_source_separately_from_adaptation(self) -> None:
+        (self.publisher / "source.txt").write_text("original contribution\n", encoding="utf-8")
+        self.git(self.publisher, "add", "source.txt")
+        self.git(self.publisher, "commit", "--author", "Original Developer <original@example.com>",
+                 "-m", "feat: original transfer")
+        source = self.git(self.publisher, "rev-parse", "HEAD").stdout.strip()
+        self.git(self.worktree, "fetch", str(self.publisher), "main")
+        self.git(self.worktree, "cherry-pick", "-x", source)
+        migrated = self.git(self.worktree, "rev-parse", "HEAD").stdout.strip()
+        author = self.git(self.worktree, "show", "-s", "--format=%an <%ae>", migrated).stdout.strip()
+        committer = self.git(self.worktree, "show", "-s", "--format=%cn <%ce>", migrated).stdout.strip()
+        self.assertEqual("Original Developer <original@example.com>", author)
+        self.assertEqual("Skill Test <skill-test@example.com>", committer)
+        self.assertIn(source, self.git(self.worktree, "show", "-s", "--format=%B", migrated).stdout)
+        self.commit_local_change("separate adaptation\n")
+        self.assertEqual(migrated, self.git(self.worktree, "rev-parse", "HEAD^").stdout.strip())
+        self.assertEqual(author, self.git(self.worktree, "show", "-s", "--format=%an <%ae>", migrated).stdout.strip())
+
+    def test_same_tree_rebuilt_history_can_conflict_with_existing_integration(self) -> None:
+        base = self.git(self.worktree, "rev-parse", "HEAD").stdout.strip()
+        self.git(self.worktree, "switch", "-c", "original")
+        (self.worktree / "feature.txt").write_text("v1\n", encoding="utf-8")
+        self.git(self.worktree, "add", "feature.txt")
+        self.git(self.worktree, "commit", "-m", "original v1")
+        first = self.git(self.worktree, "rev-parse", "HEAD").stdout.strip()
+        self.git(self.worktree, "branch", "test")
+        (self.worktree / "feature.txt").write_text("v2\n", encoding="utf-8")
+        self.git(self.worktree, "commit", "-am", "original v2")
+        last = self.git(self.worktree, "rev-parse", "HEAD").stdout.strip()
+        self.git(self.worktree, "switch", "-c", "replayed", base)
+        self.git(self.worktree, "cherry-pick", "-x", first, last)
+        replayed = self.git(self.worktree, "rev-parse", "HEAD").stdout.strip()
+        self.assertNotEqual(last, replayed)
+        self.assertEqual(0, self.git(self.worktree, "diff", "--exit-code", last, replayed).returncode)
+        self.git(self.worktree, "switch", "test")
+        self.assertEqual(first, self.git(self.worktree, "merge-base", "HEAD", last).stdout.strip())
+        self.assertEqual(base, self.git(self.worktree, "merge-base", "HEAD", replayed).stdout.strip())
+        merge = self.git(self.worktree, "merge", "--no-commit", "--no-ff", replayed, check=False)
+        self.assertEqual(1, merge.returncode)
+        self.assertIn("feature.txt", self.git(self.worktree, "diff", "--name-only", "--diff-filter=U").stdout)
+        self.assert_readonly("inspect", "GIT_OPERATION_IN_PROGRESS", 1)
+        self.assert_readonly("check", "GIT_OPERATION_IN_PROGRESS", 1)
+        self.assertEqual("test", self.git(self.worktree, "branch", "--show-current").stdout.strip())
+
     def test_malformed_and_timeout_remote_results_are_unavailable(self) -> None:
         for result in (git_latest_code.GitResult(0, "malformed refs/heads/main", ""),
                        git_latest_code.GitResult(128, "", "authentication failed")):

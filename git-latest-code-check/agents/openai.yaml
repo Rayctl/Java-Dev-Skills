@@ -1,7 +1,7 @@
 interface:
-  display_name: "Git Latest Code Check"
-  short_description: "Check development targets and verify before pushing"
-  default_prompt: "Use $git-latest-code-check for this confirmed Git worktree, preserving user requirements, accepted business rules/design, task scope, progress, and authorization; report every result, announce updates first, revalidate only affected code after updating, and verify the actual existing destination before every authorized push."
+  display_name: "Git Safe Collaboration"
+  short_description: "Guard Git targets, provenance, integration and pushes"
+  default_prompt: "Use $git-latest-code-check to coordinate this Git task safely: preserve business intent, distinguish development and integration targets, retain commit provenance, load only the matching workflow, and visibly report results without expanding authorization."
 
 policy:
   allow_implicit_invocation: false
