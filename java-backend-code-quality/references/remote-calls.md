@@ -17,6 +17,16 @@ Identify one layer that owns remote-call diagnostics. Verify whether the effecti
 
 If existing infrastructure safely supplies the information needed to investigate the call, reuse it and do not print the same request or response again in the business layer. Add only the missing context at the owning boundary.
 
+## Verify The Diagnostic Path
+
+For a changed integration, trace the applicable outcomes through the actual diagnostic owner: failure before sending, successful response, provider or HTTP rejection, unreadable response, and transport failure. For each, locate the event or retained evidence, how it joins to the caller and the same attempt, and what the elapsed time measures. Reuse existing correlation identifiers when they span the path; do not invent a new tracing framework. An identifier present only in the caller's error log does not automatically connect an uncorrelated provider summary to it.
+
+A summary with account, status, and duration is insufficient when it leaves no way to establish what was sent, what came back, or where the call failed. Check the agreed request/response fields, approved payload capture, or a usable reference to retained evidence. Preserve enough permitted response evidence before parsing can fail. A summary is sufficient when existing infrastructure already supplies the remaining evidence for the same call; full payload logging is neither mandatory nor automatically authorized.
+
+Distinguish total operation duration from HTTP attempt duration: account lookup, authentication, serialization, retries, and waits may occur outside the HTTP call. Keep pre-send failure distinguishable from a provider rejection, and do not imply a request was sent or completed when it was not. Follow the confirmed payload and audit policy while keeping logging structure proportional under [method-design.md](method-design.md).
+
+Verify this coverage with focused logger/transport tests or an inspected representative trace where practical. State gaps when only code inspection was possible; mocked transport tests or a passing style checker alone do not establish production log availability or correlation. This is a targeted check for the changed integration, not a requirement to capture production payloads or add a fixed log schema to every method.
+
 ## Choose The Logging Scope
 
 A useful remote-call record lets an operator correlate the operation and determine what failed. Depending on repository policy, that may include the provider and operation, safe business identifiers, target identity, selected request fields, outcome, HTTP or RPC status, provider error code and message, provider request ID, elapsed time, retry count, and the original technical exception.

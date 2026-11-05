@@ -16,9 +16,13 @@ Do not ask one message to satisfy all three. A clear `catch` comment does not re
 
 Treat every changed `try-catch-finally` as a behavioral boundary. Catch only the failures the branch can handle, preserve unexpected exceptions and caller-relevant error categories, and prevent fallback, cleanup, or recovery failures from masking the original cause. Remove context-free catch-log-rethrow blocks and assign diagnostic logging to one owning layer.
 
+For each added catch, identify its concrete contribution: a required caller contract, recovery, or useful context unavailable at the diagnostic owner. Do not wrap every stage just to give it another message or satisfy a comment rule. A narrow authentication catch that adds a needed account identifier and retains the cause can be useful; wrapping an already adequate domain error in another generic failure may add no value. Keep later validation outside a catch that would relabel it as an earlier operation's failure. Evaluate this together with the complete normal path, not by banning catches or imposing a nesting limit.
+
 ## Caller-Visible Errors
 
 Use the project's established language and domain terms. A caller-visible error should identify the failed subject or action, give the most specific cause the current boundary can state truthfully, and include a next step only when the caller can actually take one.
+
+When several sources, destinations, requests, or responses coexist, include the direction, owning operation, phase, or field location needed to distinguish them. An internal role name alone may not locate the user's problem. Shared components should receive the relevant context or let the owning boundary supply it, rather than guessing direction from a generic type or fixed message. Missing generated output establishes an unmet condition, not whether the source was empty, configuration was missing, or a transformation returned null. State the observed failure and only an evidenced cause; use applicable UI/API terminology without exposing restricted internals or imposing a fixed verbose template.
 
 Reject vague business or interface-layer messages such as `invalid parameter`, `operation failed`, `system error`, or `data not found` when the code knows the field, resource, state, constraint, or action involved. Do not claim a resource is missing when it may instead be disabled or inaccessible; describe the combined contract accurately when the source cannot distinguish those cases.
 

@@ -16,6 +16,10 @@ Every guidance entry is advisory and cannot create a `P2` or `P3` finding by its
 
 A named utility, logger, or wrapper is a permitted lookup hint, not a cached API contract. Do not store method signatures, accepted values, behavior descriptions, or concrete API invocation recipes. Before using the hint, check the current receiver and relevant implementation or dependency API.
 
+Do not promote a single task's implementation choices into durable project hints. For example, "this integration logs summary fields only; the calculation caller owns fallback" records a feature decision, not a general logging convention. Keep such decisions in the task context or its authorized design record. An established project-wide logging or error policy may be referenced as a hint with its source and applicability; approval of one implementation or of creating this file does not establish that policy. Before an authorized refresh, separate stable lookup hints from task decisions instead of copying the implementation summary.
+
+A valid section SHA establishes code ancestry, not continuing business applicability. Later user decisions or a different call boundary can invalidate a hint even when no build or infrastructure file changed. Follow current requirements and targeted evidence immediately; ask separately before refreshing the file when not already authorized. Do not let a stale hint veto an approved change or treat the phrase "user approved" inside a hint as authorization for the current task.
+
 In `Build And Verification`, distinguish the normal build or test entry point from environment-dependent options. Offline mode requires the necessary artifacts to be cached and no dependency refresh to be needed; do not make it the default merely because one run succeeded offline. Record cache assumptions or skipped build/test steps with their applicability conditions, and report resulting verification limits.
 
 ## Discover Or Offer The File

@@ -1,6 +1,6 @@
 # Evidence, Context, And Final Verification
 
-Read this reference before modifying existing behavior or data semantics, when a quality decision depends on missing or conflicting evidence, or when tools may change files after the initial edit. It governs semantic impact analysis, the distinction between repository facts and Skill defaults, and verification of the code that actually remains on disk.
+Read this reference before modifying existing behavior or data semantics, when changed business decisions need diagnostic evidence, when evidence is missing or conflicting, or when tools may change files after the initial edit. It governs semantic impact, business diagnostics, evidence authority, and final-state verification.
 
 ## Incremental Implementation Loop
 
@@ -18,6 +18,8 @@ Before the first edit of a complex task:
 2. Classify the stages and load only references whose triggers are present
 3. Identify assumptions that would require a user decision if the evidence remains unresolved
 
+For adaptation, compatibility, aggregation, or ownership moves, walk one representative input to the final output before choosing the edit. Include only the branch combinations that can change the contract; a compact example or reasoning note is enough. Use [contracts-and-lifecycles.md](contracts-and-lifecycles.md) for defaults, later overwrites, identity/cardinality, absence, units, versions, and failure boundaries. Do not turn this into a mandatory document for simple local changes.
+
 Implement complex work in meaningful slices. After each meaningful stage or boundary call, and before moving to a new responsibility:
 
 1. Read the code just written together with the next consumer
@@ -30,6 +32,8 @@ Do not write all stages first and postpone these checks until the final diff. A 
 If a checkpoint reveals that the requirement, data relationship, error meaning, or existing special handling was misunderstood, stop at that boundary. Report the evidence, the changed interpretation, the concrete options and impact, and ask when the remaining choice would change behavior beyond the user's approved requirements. Preserve already-correct stages and discard only conclusions invalidated by the new evidence.
 
 The final pass is not a substitute for checkpoints. It rereads the complete changed path, verifies cross-stage invariants and final callers, runs the deterministic checker and focused tests, and records checks that could not run. For a simple change it may be the only post-edit review; for a complex change it confirms every checkpoint rather than relying on a final diff glance.
+
+Derive meaningful expected results from the accepted contract and concrete examples, not solely by copying the implementation's current assignments into test assertions. When requirements change, update the affected expectations and dependent conclusions while preserving unaffected decisions. Discovering a related historical risk does not authorize repairing it; distinguish a proven regression from a hypothesis and explain any change required outside the agreed scope. An exclusion for one planning or commit operation does not silently become a permanent review exclusion.
 
 
 ## Map The Semantic Neighborhood
@@ -56,6 +60,27 @@ Treat logs as diagnostic behavior rather than decoration. Before adding, removin
 
 If the purpose remains unknown and materially different changes are possible, pause before editing. State the evidence inspected, the exact unresolved relationship, the concrete options and effects, and a recommendation. Do not ask broad questions such as "What is the business logic here?"
 
+## Trace Important Business Changes And Results
+
+During planning and at meaningful stage checkpoints, ask whether the permitted evidence can explain which inputs and rules produced an important result, what changed, and where a failure occurred. Apply this to ordinary business processing as well as integrations: parameter overrides, mapping or calculations, rule selection, state transitions, automatic repair, and validation failures. Missing logs in the current implementation are not a reason to skip the assessment. Add diagnostics for a concrete evidence gap; do not log every assignment, getter, loop item, or pure conversion merely because it has input and output.
+
+Choose fields for the actual investigation, following the repository's logging entry point, event format, levels, production enablement, and owning layer:
+
+- overrides and repairs: the business identifier, relevant prior and resulting values, and the reason or selected source
+- calculations, mapping, and rule selection: the inputs that determine the outcome, the applied rule when it can vary, and the actual result
+- state transitions: the prior state, triggering decision, and the outcome at the boundary that was actually reached
+- failed validation: the affected object, relevant actual value and expected condition, and the specific failure reason
+
+Capture prior values before mutation. A second reference to the same mutable object, or a shallow copy whose nested values later change, is not a reliable before snapshot. Capture the necessary stable scalar values or a suitably isolated representation within the agreed logging scope; do not deep-copy whole objects by default. For asynchronous or deferred logging, ensure later mutation cannot rewrite either recorded snapshot. Preparing diagnostics must not trigger extra business reads, alter evaluation order, or change transaction/failure behavior merely to obtain log fields. A pre-write value is only the value this operation observed; do not claim a global or atomically verified prior state without that guarantee.
+
+Distinguish intended values, in-memory results, attempted operations, confirmed outcomes, and committed state. Setting a request field does not mean the request was sent; a successful repository call inside a transaction does not prove the transaction committed; a timeout does not prove a remote write failed. Label the observed stage accurately and preserve failure evidence when the success path is not reached. If a completion record is required, use the existing lifecycle owner rather than inventing a success claim or a new transaction/logging framework.
+
+Keep records attributable to the same operation and, where applicable, the same retry attempt. Reuse an existing trace or business identifier with sufficient scope; do not assume an order ID distinguishes concurrent attempts. One change event can contain before/after values, or correlated records can show inputs and results. Reuse existing diagnostics or retained evidence when they already cover the need; do not require paired logs or duplicate complete infrastructure. Keep the real state write visible and use the existing stage-comment rules for a substantial diagnostic block. Do not introduce distant null variables or an outer `finally` solely to assemble a summary; see [method-design.md](method-design.md) when such scaffolding appears.
+
+Recording scope remains a repository/user decision. Reuse confirmed policies for fields, payload size, level, access, masking, and retention; this preference authorizes neither arbitrary full objects nor a universal masking requirement. When scope is unresolved, show the needed fields, risks, and relevant choices, then ask before broadening logs. Reuse [project-guidance.md](project-guidance.md) only for applicable hints and [remote-calls.md](remote-calls.md) when a remote boundary is involved. Consider record volume and hot paths; a bounded record at the responsible boundary may explain the outcome better than per-item logging.
+
+Verify changed diagnostics against representative success and failure paths. When snapshot timing, correlation, or outcome labels matter, use log capture or inspect the actual logging path; tests that assert only business results do not prove those properties. Logs help investigation and observation but do not replace validation, assertions, or tests of input/output correctness. Missing necessary diagnostic evidence or false success claims are normally `P2` when they materially mislead investigation; a preference for additional harmless detail is not automatically a finding.
+
 ## Classify Evidence
 
 Do not treat every nearby example as a project rule. Classify what supports a decision:
@@ -68,6 +93,8 @@ Do not treat every nearby example as a project rule. Classify what supports a de
 - **recommendation**: a Skill default or engineering preference used when stronger evidence does not decide the issue
 
 Authority defines intended constraints; observed behavior establishes what the system currently does. Existing behavior does not veto an explicit approved change. Surface unresolved conflicts between authoritative requirements or newly discovered compatibility obligations and explain their impact; do not ask again merely because the old code or tests describe the previous behavior. Tests may preserve a bug, source may violate a published contract, and a common local pattern may still be unsafe.
+
+Before adding a configuration option, default threshold, account-selection rule, or duplicated validation, establish why this boundary needs it and whether an existing owner already supplies it. A nearby implementation is a comparison point, not proof that its identity, scope, failure contract, or time budget fits this call. Separate the need for a new option from the repository rule for where such an option belongs; a required configuration class is not itself needless abstraction. Explain consequential unverified defaults and ask only when the remaining choice changes behavior beyond approved requirements.
 
 When applying a rule, state material evidence in the reasoning or finding. Do not present local guidance or a recommendation as an existing repository standard. Local guidance may direct targeted verification and may beat a generic recommendation when stronger evidence is silent, but it cannot create a finding by itself. Examples illustrate a rule; they do not create a universal ban.
 
@@ -85,6 +112,12 @@ Resolve low-risk, reversible readability choices using the Skill default and the
 Before asking, report the evidence found, the unresolved decision, the concrete options, their costs, and a recommendation. If an established extension point or contract already resolves the choice, follow it without pausing.
 
 Report a missed semantic relationship according to its actual effect: likely incorrect behavior or a broken contract is `P1` or `P2` depending on certainty and impact, loss of material diagnostic capability is normally `P2`, and unnecessary navigation or local understanding cost is `P3`.
+
+## Keep Diagnosis And Verification Claims Bounded
+
+Distinguish a defect that exists in code, a plausible failure path, and evidence that this incident followed that path. Matching elapsed time or a nearby success log cannot by itself establish causality. State the observed facts, missing link, and a focused check that could distinguish alternatives. A missing branch log does not by itself prove either that the branch ran or that it did not. Identify existing defects as existing; investigate them only when relevant to the task, without silently expanding a repair into unrelated history.
+
+Map verification claims to what actually executed. Tests that mock token acquisition can verify the adapter's handling of a token or exception, but cannot prove real cache, lock, or refresh behavior. Tests that assert an HTTP body or returned error do not establish log coverage unless they inspect the diagnostic path. Report compilation, deterministic style, contract tests, semantic review, and unverified integration behavior separately when the distinction matters. Preserve useful test evidence without turning a pass count into a blanket quality conclusion.
 
 ## Read Back The Final State
 

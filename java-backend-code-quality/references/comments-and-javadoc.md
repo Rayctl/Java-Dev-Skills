@@ -2,6 +2,16 @@
 
 Read this reference when changed code adds or changes a class, method, JavaDoc, comment, guard cluster, or non-trivial method body. Skip it for changes limited to imports, annotations, constants, or generated and inherited declarations with no new semantics.
 
+## Separate Current Meaning From Local Style
+
+Before updating comments for changed behavior, establish the accepted current rule from the requirement, final implementation, affected callers, tests, and configuration. Old comments are clues to investigate and constraints to recheck, not the outline into which new behavior must fit. If implementation and the accepted contract conflict, resolve that discrepancy rather than changing the comment to endorse either an obsolete promise or an unintended implementation.
+
+Before drafting or rewriting a comment, inspect a small representative set of nearby comments with the same role in the current file. Compare method JavaDoc with similar methods, class documentation with classes, and stage comments with stages; a short field comment is not the template for a multi-step business method. If the file has no useful examples, look at a comparable type in the same package without scanning the whole repository.
+
+Use their layout, language, established business vocabulary, level of detail, and relevant tags as a reference for form. Derive factual claims from the current rule, not the old wording. For example, keep a coherent multi-line method-documentation style instead of introducing a dense one-line summary; a clear one-line JavaDoc can remain for a comparable simple action. Local style does not prove a universal rule or the new method's behavior. Explicit user instructions and formal repository requirements take precedence, and required documentation coverage remains intact.
+
+When styles are mixed, choose the nearest clear and applicable examples without asking the user to resolve ordinary formatting. Do not copy obsolete guarantees, ambiguous shorthand such as an unexplained "clear old / set new", or irrelevant tags merely to look consistent. Keep the actual object and action clear; concision does not require omitting them or fitting every fact on one line. During final readback, compare the changed comments with their surroundings for both consistency and accuracy. Do not reformat unrelated comments or cache the file's comment patterns in project guidance.
+
 ## Separate Documentation Scopes
 
 Treat class JavaDoc, method JavaDoc, top-level stage comments, and branch-local comments as different contracts. One scope cannot substitute for another.
@@ -99,7 +109,18 @@ For example, prefer `// Select the request encoder from the resolved content typ
 
 ## Comment Maintenance
 
-Remove or update comments when behavior, ownership, or ordering moves. Describe an operation as atomic only when a transaction primitive, lock, or compare-and-set contract actually guarantees atomicity.
+When a rule, branch, source priority, result, failure behavior, ownership, or ordering changes, reassess each affected comment as a complete explanation. State the current subject, conditions, action, result, and relevant guarantees directly, rather than defaulting to the old sentence plus an exception or a change announcement. Apply this to method JavaDoc and enclosing stage or branch comments as well as comments on the edited line; a comment can become stale without appearing in the initial diff.
+
+Formulate the complete current explanation, then compare it with the prior comment to retain still-valid null, compatibility, ordering, side-effect, and failure constraints. Remove superseded claims, vague exceptions, and task-history fragments. Describe an operation as atomic only when a transaction primitive, lock, or compare-and-set contract actually guarantees it. A small wording edit is sufficient when the complete comment remains accurate and self-contained; do not rewrite accurate unaffected comments or delete required coverage merely to avoid historical wording.
+
+For example, if the confirmed rule now selects an order-specified sender address and falls back to the warehouse address only when it is absent:
+
+```java
+// Unclear patch: 使用仓库地址生成发件信息，特殊情况支持订单地址
+// Current rule: 优先使用订单指定的发件地址，未提供时使用仓库地址
+```
+
+This is a completeness check, not a ban on words such as "also", "new", or "special". In final readback, ask whether a maintainer without the old version or task discussion can understand the current rule from the comment and code, and verify that every condition and guarantee is supported. Preserve real compatibility explanations under the current-contract rules above.
 
 ## Formatting And Severity
 

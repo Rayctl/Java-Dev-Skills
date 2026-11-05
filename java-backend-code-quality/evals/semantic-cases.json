@@ -298,14 +298,16 @@
       "title": "Complete safe infrastructure logging should not be duplicated",
       "mode": "implementation",
       "triggers": ["remote-calls"],
-      "fixture": "A repository interceptor already records the operation, masked request fields, response status, provider error, request ID, elapsed time, retry outcome, and the final exception once in production.",
+      "fixture": "A repository interceptor already records the operation, masked request fields, response status, provider error, request ID, elapsed time, retry outcome, and the final exception once in production. It captures permitted response evidence before parsing, and the same request ID connects the service summary to those retained records. The confirmed policy excludes full payload bodies.",
       "expected_decisions": [
         "Reuse the existing diagnostic owner",
-        "Add business-layer logging only if a concrete investigation field is still missing"
+        "Add business-layer logging only if a concrete investigation field is still missing",
+        "Accept the correlated summary because the interceptor supplies the remaining evidence within the confirmed policy"
       ],
       "disallowed_decisions": [
         "Always print request and response again in the service",
-        "Add catch-log-throw at every layer"
+        "Add catch-log-throw at every layer",
+        "Require full payloads despite sufficient permitted diagnostic evidence"
       ]
     },
     {
@@ -1489,6 +1491,436 @@
       "fixture": "The changed method executes statusByOrder.put(orderId, nextStatus) and immediately calls logger.info(\"Order status changed to {}\", nextStatus). The single-line log names the same status value, and there is no hidden contract, before/after payload, serialization, or separate diagnostic stage.",
       "expected_decisions": ["Do not require an extra comment because the write and its direct one-line log are self-explanatory", "Apply the targeted comment rule only when multi-line log assembly could obscure the main action", "Preserve the current operation and log order"],
       "disallowed_decisions": ["Require a comment between every state mutation and log call", "Treat visual spacing alone as a documentation obligation", "Move logging or the state write without a behavior reason"]
+    },
+    {
+      "id": "integration-summary-misses-diagnostic-path",
+      "title": "An outcome summary does not establish remote-call diagnosis",
+      "mode": "review",
+      "triggers": ["remote-calls", "evidence-and-verification"],
+      "prompt": "这个接口已经打印调用摘要且测试通过，可以交付了吗？只读检查",
+      "fixture": "A new adapter executes account lookup, token acquisition, encoding, HTTP and parsing. requestBody is sent without any request-field record; responseBody is parsed without retaining permitted response evidence. A finally log contains accountId, nullable httpStatus, classification and elapsedMs measured before lookup. The caller's failure log contains requestId, but the summary does not, and there is no trace bridge or interceptor. Multiple calls for the same account can overlap. The policy permits selected address fields, structured provider errors and a bounded response excerpt; credentials are excluded. Tests assert parsed results and exceptions but do not inspect logs.",
+      "expected_decisions": ["Identify missing request/response evidence and same-call correlation as a diagnostic gap despite a summary and passing tests", "Distinguish total operation timing from HTTP attempt timing and pre-send failure from provider rejection", "Suggest evidence capture within the confirmed policy before parsing and reuse of caller correlation", "Keep the task read-only and state that log behavior was not tested"],
+      "disallowed_decisions": ["Approve solely because outcome and duration are logged", "Require unrestricted complete payloads", "Assume accountId alone correlates concurrent calls", "Call elapsedMs the provider response time"]
+    },
+    {
+      "id": "diagnostic-scaffolding-obscures-normal-path",
+      "title": "Local checks do not excuse an unreadable complete operation",
+      "mode": "review",
+      "triggers": ["method-design", "exception-communication", "remote-calls"],
+      "prompt": "各阶段都有注释和异常处理，但整个方法很绕，帮我检查原因",
+      "fixture": "A changed adapter has a straight lookup-authenticate-send-parse operation. It predeclares accountId=null, status=null, classification=null and outcome=FAILED solely for a final diagnostic map. An outer try/finally spans all stages; each stage assigns one of these fields. Several catches rewrap already sufficient domain exceptions in the same generic message without new context. The HTTP resource block and detailed response parser have real ownership. There is no audit requirement for one final event; approved boundary records can preserve all existing evidence and correlation.",
+      "expected_decisions": ["Compare the whole normal path and identify distant log-only state and redundant wrappers as reading costs", "Recommend keeping values and diagnostics near their meaningful operation while preserving all established diagnostic fields and failure semantics", "Retain owned-resource cleanup and the cohesive response parser", "Treat pure readability cost as P3 rather than invent a functional defect"],
+      "disallowed_decisions": ["Approve because each individual block has a comment", "Delete all catches or finally blocks by count", "Replace four logging variables with a new context class without a real benefit", "Remove diagnostics to make the method shorter"]
+    },
+    {
+      "id": "audit-finally-and-contextual-catch-remain",
+      "title": "Real audit and exception responsibilities justify their structure",
+      "mode": "review",
+      "triggers": ["method-design", "exception-communication", "remote-calls"],
+      "prompt": "有一个 finally 和几个 try，是不是应该都拆掉？",
+      "fixture": "An operation has a documented exactly-once completion audit on success, pre-send rejection and transport failure. Its established recorder uses one correlation ID and explicit stage/outcome values, cannot throw into the business path, and distinguishes operation and attempt timing. HTTP resources are owned by a try-with-resources block. A narrow token-acquisition catch adds the account identifier needed by the diagnostic owner and retains the original cause; an empty-token guard is outside that catch. Existing provider business errors propagate unchanged.",
+      "expected_decisions": ["Retain the meaningful final audit, owned-resource scope and context-adding catch", "Recognize that explicit stage/outcome state has a real contract rather than judging only declaration count", "Keep the later empty-token guard from being relabeled as a token-acquisition exception", "Avoid a finding based solely on the number of try blocks"],
+      "disallowed_decisions": ["Remove the audit or move it to success only", "Ban shared diagnostic state categorically", "Wrap provider business errors again", "Require method splitting merely to reduce visible nesting"]
+    },
+    {
+      "id": "new-options-need-purpose-before-placement",
+      "title": "Configuration placement rules do not justify an arbitrary new timeout",
+      "mode": "implementation",
+      "triggers": ["evidence-and-verification", "remote-calls"],
+      "prompt": "补齐这个第三方适配方法，沿用项目现有机制",
+      "fixture": "A confirmed project contract applies the shared client timeout policy to this read-only provider operation; no endpoint-specific override is requested. A repository rule requires any genuinely new business configuration to reside in AppConfig. A proposal adds two endpoint-specific 10-second properties and an AppConfig without examining the shared client policy, while also duplicating address-format checks owned by the provider. The adapter only needs a null request guard to access its fields safely; provider field rejections are already preserved.",
+      "expected_decisions": ["Use the confirmed shared timeout policy rather than invent endpoint-specific defaults", "Evaluate the need for new options separately from AppConfig placement, preserving the repository rule when new options are actually necessary", "Keep adapter safety guards and provider validation ownership distinct", "Proceed with the established contract without asking for an already resolved policy"],
+      "disallowed_decisions": ["Declare AppConfig itself forbidden", "Invent a universal 10- or 30-second default", "Duplicate every provider field rule by default", "Remove null safety because the provider validates addresses"]
+    },
+    {
+      "id": "nearby-account-selection-needs-equivalent-scope",
+      "title": "A nearby first-account lookup does not establish identity for another operation",
+      "mode": "implementation",
+      "triggers": ["evidence-and-verification", "naming"],
+      "prompt": "复用现有鉴权接入新接口，看看账号应该怎么选",
+      "fixture": "A nearby public tracking operation queries enabled accounts and uses the first one. The new document-download operation is tenant-scoped, receives tenantId and has existing tests requiring tenant ownership. No mapping from tenant to provider account has been found yet, and no contract establishes equivalent credentials across accounts. The proposed adapter copies the first-account lookup solely because tracking does so.",
+      "expected_decisions": ["Reject reuse of the selection rule without establishing identity and scope equivalence", "Inspect the relevant tenant mapping and account owner before asking a specific remaining question", "Keep the approved integration objective while treating unresolved account selection as a material decision"],
+      "disallowed_decisions": ["Use the first account because nearby code does", "Assume adding stable sorting solves tenant ownership", "Invent a new fixed account configuration as the answer without evidence"]
+    },
+    {
+      "id": "guidance-keeps-task-decisions-out",
+      "title": "Approval of an implementation does not establish a durable project policy",
+      "mode": "implementation",
+      "triggers": ["project-guidance", "evidence-and-verification"],
+      "prompt": "同意初始化本地项目提示，记录稳定的日志和工具入口",
+      "fixture": "The task accepted summary-only logging for one sandbox prototype and fallback in its calculation caller. A proposed guidance entry says all carrier integrations log summaries only and calculation owns failures, marked user approved. Formal docs separately identify the stable project logger and a project-wide error catalog. The user approved initializing hints, not new global policies or formal-document edits.",
+      "expected_decisions": ["Keep the prototype's logging and fallback decisions in task context rather than project-guidance", "Record the stable logger and formal error-catalog lookup sources with their applicability as advisory hints", "Distinguish initialization approval from approval of a project-wide logging policy"],
+      "disallowed_decisions": ["Promote the prototype decision into a general rule", "Cache the caller chain or failure behavior as a durable hint", "Reject all established project-wide policy references", "Create or rewrite formal project rules without authorization"]
+    },
+    {
+      "id": "guidance-valid-sha-does-not-freeze-task-policy",
+      "title": "Current requirements can supersede a hint without a code change",
+      "mode": "implementation",
+      "triggers": ["project-guidance", "remote-calls"],
+      "prompt": "这次按已确认范围增加失败响应记录，先不要改本地提示文件",
+      "fixture": "Logging guidance has a valid ancestor SHA and unchanged build/client files, but says a previous integration logs summaries only. The current user explicitly approves bounded, access-controlled failure response excerpts for this operation and confirms which fields to omit. The same existing logger is still appropriate. Updating project-guidance is explicitly excluded.",
+      "expected_decisions": ["Follow the current scoped logging decision and verify the current logger without treating SHA validity as continuing policy authority", "Treat the older feature-specific hint as inapplicable to this change", "Leave guidance content and metadata unchanged as requested"],
+      "disallowed_decisions": ["Let the hint veto the approved log change", "Repeat an already settled disclosure question solely because of the hint", "Refresh guidance automatically", "Expand bounded failure logging to all raw payloads"]
+    },
+    {
+      "id": "incident-timing-does-not-prove-failure-path",
+      "title": "An existing defect and a plausible timeline are not a proven incident cause",
+      "mode": "review",
+      "triggers": ["evidence-and-verification"],
+      "prompt": "看到刷新成功日志却拿到空 Token，是不是这个递归问题导致的？",
+      "fixture": "Legacy refreshToken has a lock-wait branch that sleeps four seconds, calls refreshToken(accountId) without returning its result, then returns null. A five-second failed adapter invocation and a nearby refresh-success event exist, but the required wait-branch event is absent and the records cannot be correlated to one invocation. The cache contains-check followed by get also has a possible expiry race. The user asks for diagnosis only.",
+      "expected_decisions": ["Confirm the recursive return-loss defect while separating it from proof of this incident's cause", "Treat elapsed time and nearby success as clues, not a basis to rank the hypothesis as established or most likely without distinguishing evidence", "Propose a focused correlation or branch-execution check and keep the cache race as an unresolved alternative", "Identify the defect as legacy and keep the response read-only"],
+      "disallowed_decisions": ["Assert the missing wait log must be a collection gap", "Claim absent logging proves the branch did not run", "Declare the new adapter created the legacy recursion defect", "Repair token logic without authorization"]
+    },
+    {
+      "id": "mocked-tests-do-not-prove-integration-diagnostics",
+      "title": "Passing tests support only the behavior that they actually execute",
+      "mode": "review",
+      "triggers": ["evidence-and-verification", "remote-calls"],
+      "prompt": "单测和样式检查通过了，能说缓存、并发和排障能力也验证通过了吗？",
+      "fixture": "The adapter's tests stub getAccessToken to a fixed value or exception and send real HTTP to a local fixture. Assertions cover request JSON, classification zero, structured provider errors, no retry and a read timeout. They neither execute Redis/lock/refresh code nor capture logs. Compilation and the deterministic style checker pass. No real-provider or production trace was inspected.",
+      "expected_decisions": ["Credit the executed local HTTP contract tests and style checks", "State that real token/cache/concurrency behavior and diagnostic correlation remain outside these tests", "Recommend targeted verification only for the affected unverified behavior and keep real-provider validation distinct", "Do not equate mocked code with an actual defect"],
+      "disallowed_decisions": ["Claim the whole integration and production diagnostics are proven", "Dismiss all tests because a dependency is mocked", "Require rewriting unrelated historical token logic", "Treat missing coverage as proof of failure"]
+    },
+    {
+      "id": "comment-follows-comparable-methods-in-file",
+      "title": "Existing method documentation guides the new comment form",
+      "mode": "implementation",
+      "triggers": ["comments-and-javadoc"],
+      "prompt": "给这个切换映射的方法补充注释，和文件里的已有写法协调",
+      "fixture": "The current class documents comparable business methods with multi-line Chinese JavaDoc: a concrete purpose, a separate paragraph for meaningful constraints, and relevant @param tags. A field above uses a one-line comment. The new method disables the prior mapping and enables the selected mapping for one API inside a verified transaction; failure rolls back both changes. A draft says /** 设置唯一映射，清旧和设新在同一事务内完成 */. No explicit rule requires one-line method documentation.",
+      "expected_decisions": ["Inspect and follow the comparable business-method layout rather than the nearby field comment", "Provide a concrete multi-line rewrite naming the API scope and mapping actions with only verified guarantees and relevant tags", "Use established vocabulary without copying ambiguous shorthand", "Keep changes scoped to the requested method comment"],
+      "disallowed_decisions": ["Keep the compressed draft solely because it is concise", "Impose a new generic template without reading comparable comments", "Claim a global uniqueness guarantee from a local transaction", "Reformat all historical comments for uniformity"]
+    },
+    {
+      "id": "clear-local-single-line-javadoc-can-remain",
+      "title": "Local consistency does not require every JavaDoc to become multi-line",
+      "mode": "review",
+      "triggers": ["comments-and-javadoc"],
+      "prompt": "新方法用了和旁边一样的一行 JavaDoc，这样可以吗？",
+      "fixture": "Comparable simple actions in the current file use concise one-line Chinese JavaDoc. The changed pure conversion has a complete one-line purpose and no hidden absence, side-effect or failure contract. Formal rules do not require tags or multi-line layout, and the actual implementation matches the comment.",
+      "expected_decisions": ["Accept the accurate one-line JavaDoc as consistent with comparable local actions", "Judge information and applicable style rather than treating one-line formatting itself as a defect", "Avoid repository-wide exploration for this local comment review"],
+      "disallowed_decisions": ["Require all method comments to become multi-line", "Add transaction or failure guarantees to fill a template", "Delete required JavaDoc merely because the method name is clear"]
+    },
+    {
+      "id": "local-comment-reference-does-not-copy-bad-guarantees",
+      "title": "Mixed or stale neighboring comments remain references rather than facts",
+      "mode": "implementation",
+      "triggers": ["comments-and-javadoc"],
+      "prompt": "参考已有注释，补充当前方法说明",
+      "fixture": "Neighboring methods use mixed layouts. One old comment says 清旧设新，失败自动重试, but the current method only replaces an in-memory selection, has no retry, and does not persist data. Another comparable method describes its object and action clearly in plain Chinese. The task authorizes only the current method's documentation; there is no overriding format rule.",
+      "expected_decisions": ["Use the clear comparable comment as the local reference while deriving meaning from the current implementation", "Name the in-memory selection without inventing retry or persistence", "Resolve ordinary layout locally without asking for a project-wide style decision", "Leave unrelated old comments outside the change scope"],
+      "disallowed_decisions": ["Copy the obsolete retry promise for consistency", "Treat the nearest comment as mandatory regardless of role or accuracy", "Scan all modules or rewrite old comments", "Store current comment samples as durable project-guidance facts"]
+    },
+    {
+      "id": "formal-comment-rule-overrides-local-examples",
+      "title": "Local examples cannot override explicit documentation requirements",
+      "mode": "implementation",
+      "triggers": ["comments-and-javadoc"],
+      "prompt": "给新接口方法补齐 JavaDoc，注意仓库规范",
+      "fixture": "A formal repository standard requires multi-line JavaDoc with @param and @return descriptions for new public API methods. Older methods nearby have one-line summaries without tags. The new method has documented parameters, a result, and a caller-visible absence contract. The user has not exempted this method from the formal rule.",
+      "expected_decisions": ["Follow the formal documentation rule while reusing accurate local business vocabulary", "Include relevant parameter, return and absence semantics without irrelevant template sections", "Treat older formatting as context rather than permission to omit required documentation"],
+      "disallowed_decisions": ["Copy one-line legacy documentation against the formal rule", "Ask the user to choose between a clear formal requirement and old examples", "Expand the task into historical documentation cleanup"]
+    },
+    {
+      "id": "business-change-keeps-stable-before-after-values",
+      "title": "Mutable values must preserve the time represented by a change log",
+      "mode": "implementation",
+      "triggers": ["evidence-and-verification", "comments-and-javadoc", "project-guidance"],
+      "prompt": "替换订单的发件地址，并记录这次地址变化，方便以后排查",
+      "fixture": "The authorized change mutates order.getAddress().getRegion() in place. Draft code uses Address before = order.getAddress(); then sets region.code and passes before and order.getAddress() to the repository's asynchronous BizEvents logger, which serializes arguments later. A later stage also changes region.code. Existing policy permits orderId, attemptId, regionCode and selectionReason, but not the whole address. The owning service has the attemptId and no other change log exists. No persistence happens in this method.",
+      "expected_decisions": ["Capture permitted stable before and after region codes at the corresponding mutation points rather than retaining aliases or shallow nested copies", "Use the existing logger and operation identifiers with the selection reason", "Label the result as an in-memory address change and keep the business write visible", "Check the actual deferred logging path or explicitly bound verification if it was not exercised"],
+      "disallowed_decisions": ["Use the same mutable address as both snapshots", "Reread the old region after mutation", "Deep-copy and log the whole address without need or authorization", "Declare that the order has been saved or the shipment request has succeeded"]
+    },
+    {
+      "id": "business-calculation-records-decision-evidence",
+      "title": "Ordinary calculations need evidence when inputs and choices explain a disputed result",
+      "mode": "implementation",
+      "triggers": ["evidence-and-verification", "project-guidance"],
+      "prompt": "按已确认的计费规则实现报价，并让客服能排查计算结果为什么变化",
+      "fixture": "A pure in-memory quote stage chooses between actual and dimensional weight, applies the already-selected tariff, and returns the charge. There is no remote call or database operation in the stage. The approved business rules and rounding semantics are provided. Existing PricingLog accepts quoteId, attemptId, actualWeight, dimensionalWeight, chargeableWeight, tariffCode and resultingCharge at the responsible service boundary. Its production policy permits those fields, but the current draft records only quoteId and calculation completed. Inputs cannot be reconstructed later.",
+      "expected_decisions": ["Preserve the determining weight inputs, selected tariff and actual charge through the existing permitted event", "Keep the evidence attributable to the quote attempt and distinguish a computed quote from a purchased shipment", "Continue the confirmed business rules without inventing new rounding or thresholds", "Verify calculation correctness separately from whether the log captures its evidence"],
+      "disallowed_decisions": ["Skip diagnostic assessment because the stage has no remote calls", "Record only completion while losing the non-reconstructable decision inputs", "Log every arithmetic expression", "Treat the presence of input/output logs as proof the calculation is correct"]
+    },
+    {
+      "id": "transaction-log-does-not-promise-commit",
+      "title": "Recorded outcomes follow the transaction boundary actually observed",
+      "mode": "review",
+      "triggers": ["evidence-and-verification", "contracts-and-lifecycles"],
+      "prompt": "检查这次自动修复的前后值日志是否能说明执行结果",
+      "fixture": "The changed transactional service reads a revision, updates it, and logs repair committed with oldRevision and newRevision immediately after repository.update returns. A later validation can throw and roll back the transaction. Existing transaction audit infrastructure records committed or rolled-back outcomes with operationId; the new log has only entityId, shared by concurrent attempts. The user asks for review only.",
+      "expected_decisions": ["Identify that repository return does not establish transaction commit", "Recommend accurate stage wording and correlation to the existing transaction outcome event", "Treat oldRevision as this operation's observation unless an atomic guarantee is established", "Preserve the existing transaction and audit owner and keep the review read-only"],
+      "disallowed_decisions": ["Accept committed as equivalent to repository call returned", "Move the transaction boundary merely to make the log true", "Introduce a new completion framework despite existing audit coverage", "Assume entityId alone identifies a concurrent attempt"]
+    },
+    {
+      "id": "business-diagnostics-reuse-existing-evidence",
+      "title": "Complete correlated business events satisfy change observability without duplicates",
+      "mode": "review",
+      "triggers": ["evidence-and-verification"],
+      "prompt": "业务方法里没有单独打印 before 和 after，需要补两条日志吗？",
+      "fixture": "The changed state transition delegates to an existing state engine. Its verified production audit event already contains operationId, entityId, oldState, newState, triggerReason and confirmed outcome, including failures. The service adds no other transformation. The approved retention and field policy meet the stated support requirement. No missing evidence has been identified.",
+      "expected_decisions": ["Accept the existing correlated audit record as the diagnostic owner", "Explain that a single complete event can satisfy before/after evidence", "Avoid adding duplicate business logs or a second owner"],
+      "disallowed_decisions": ["Require two log calls solely because there are before and after values", "Report P2 merely because the service lacks direct logger calls", "Expand the log payload beyond the confirmed policy"]
+    },
+    {
+      "id": "business-log-scope-requires-concrete-choice",
+      "title": "A logging preference does not settle unresolved disclosure scope",
+      "mode": "implementation",
+      "triggers": ["evidence-and-verification", "project-guidance"],
+      "prompt": "这次参数覆盖请留下前后值，之后方便排障",
+      "fixture": "The current repository uses BizLog, but provides no confirmed payload or masking policy for this path. The input object contains routing identifiers, a recipient address and a reusable access token. The routing identifier and selected source explain the override. The user has not chosen whether the address or token may be recorded. The local project-guidance file has only Build And Verification; there is no Logging section.",
+      "expected_decisions": ["Inspect current logging evidence rather than treating the existing guidance file as complete", "Present concrete relevant field choices and their risks, recommending omission of raw reusable credentials", "Wait for the unresolved logging scope choice before broadening logs and reuse any prior explicit authorization", "Keep any optional guidance update separately authorized and free of task-specific object snapshots"],
+      "disallowed_decisions": ["Serialize both full objects because before/after logs were requested", "Invent a mandatory masking policy or treat masking as already confirmed", "Use raw SLF4J despite the known repository entry point", "Automatically write the feature payload into project guidance"]
+    },
+    {
+      "id": "validation-log-explains-actual-and-expected-values",
+      "title": "Validation evidence identifies the actual input and rule without repeated error logs",
+      "mode": "implementation",
+      "triggers": ["evidence-and-verification", "exception-communication", "project-guidance"],
+      "prompt": "新增已确认的包裹重量上限校验，并能定位被拒绝的原因",
+      "fixture": "The rule rejects a parcel above the selected service's configured maximum weight. The established error handler owns one correlated validation event and accepts parcelId, serviceCode, weight with unit and maximumWeight with unit as approved context. The draft throws the correct error code and a clear user message but drops the input weight and configured limit, which may change later. Tests currently assert only the error code and message.",
+      "expected_decisions": ["Preserve actual weight, unit and the limit used by this attempt through the existing handler's supported context", "Keep the error category and user message aligned with the rejected condition", "Verify diagnostic context separately from existing error-code/message assertions", "Avoid another catch-log-rethrow record in the validator"],
+      "disallowed_decisions": ["Assume a clear user message already preserves the changing input and limit", "Reread mutable configuration later and label it as the applied limit", "Change the error contract solely to fit a new log format", "Claim the current tests prove diagnostic coverage"]
+    },
+    {
+      "id": "simple-conversion-does-not-create-log-obligation",
+      "title": "Simple deterministic code does not load logging concerns without a concrete need",
+      "mode": "implementation",
+      "triggers": ["comments-and-javadoc"],
+      "prompt": "给现有响应 DTO 增加 displayName 的直接字段映射",
+      "fixture": "The change is one direct assignment from the provided immutable source field to a response DTO. There is no new selection rule, external I/O, state transition, failure policy or diagnostic requirement. Existing mapping tests cover the output. The repository lacks project-guidance.md, and no logger or external framework API needs to be selected.",
+      "expected_decisions": ["Apply the local context and final checks without inventing a diagnostic gap", "Keep the direct mapping simple and validate its output", "Avoid loading remote, lifecycle or logging-specific material and do not ask to initialize project guidance"],
+      "disallowed_decisions": ["Add input/output logs to every converter", "Ask for a new logging policy despite no logging need", "Create a logging wrapper or snapshot object for the assignment"]
+    },
+    {
+      "id": "method-names-use-familiar-precise-actions",
+      "title": "Common words express the concrete operation without ornate synonyms",
+      "mode": "implementation",
+      "triggers": ["naming"],
+      "prompt": "把本次新增的方法名改得通俗些，行为保持不变",
+      "fixture": "New private hydrateAddress(address, defaults) only fills absent address fields from the supplied immutable defaults. New private instantiateShipmentRequest(input) constructs an in-memory request without I/O. Comparable project methods use fillMissing... and build... for these operations. All callers of these two methods are within the changed class. There are unrelated historical methods outside the task.",
+      "expected_decisions": ["Choose concrete familiar names such as fillMissingAddressFields and buildShipmentRequest consistent with the actual operations", "Preserve missing-only behavior, signatures and evaluation order while updating affected callers", "Keep unrelated methods outside scope", "Use at most P3 for vocabulary difficulty alone if reporting a finding"],
+      "disallowed_decisions": ["Replace both names with processData", "Expand the names into implementation-length sentences", "Change the fill to overwrite populated fields", "Rename all historical identifiers containing those words"]
+    },
+    {
+      "id": "precise-project-and-technical-terms-remain",
+      "title": "Familiar naming does not erase shared technical or domain contracts",
+      "mode": "review",
+      "triggers": ["naming"],
+      "prompt": "这些方法名里有 serialize、rollback 和 reconcile，是不是都要换成简单词？",
+      "fixture": "serializePayload converts a payload to the agreed wire representation. rollbackReservation undoes a reservation according to a named compensation contract. reconcileInventory is a required third-party interface implementation for a documented two-way inventory reconciliation concept used consistently by this project. No name hides additional behavior and the user has not requested incompatible interface changes.",
+      "expected_decisions": ["Retain precise technical vocabulary and the required interface signature", "Use established project meaning rather than a rare-word blacklist", "Explain that no concrete naming defect follows merely from these words"],
+      "disallowed_decisions": ["Rename required reconcileInventory to repairInventory", "Replace serialize or rollback with generic handle methods", "Report P2 solely for vocabulary difficulty"]
+    },
+    {
+      "id": "simple-rename-preserves-operation-semantics",
+      "title": "A simpler word must not narrow a multi-step or externally visible operation",
+      "mode": "review",
+      "triggers": ["naming"],
+      "prompt": "reconcileSchemaRevision 改成 repairSchemaRevision 会更容易懂吗？",
+      "fixture": "The method compares revisions in two stores, may keep either source, resolves configured conflicts, writes the chosen revision to both stores, and reports an unresolved conflict when no choice is permitted. The proposed name repairSchemaRevision was copied from an example for a one-way inconsistency repair. The task requests a naming review, not changes to reconciliation or storage behavior.",
+      "expected_decisions": ["Check the actual comparison, conflict and cross-store behavior before approving a simpler name", "Reject a mechanical example substitution if it hides bidirectional reconciliation or implies unconditional repair", "Keep an established accurate term or propose an equally precise familiar action only when the caller contract remains clear", "Keep all business and failure behavior unchanged"],
+      "disallowed_decisions": ["Approve repair solely because it is a common word", "Remove conflict handling to fit the new name", "Treat all reconcile identifiers as forbidden", "Turn the naming review into unrelated method extraction"]
+    },
+    {
+      "id": "changed-comment-rebuilds-complete-current-rule",
+      "title": "A changed selection rule replaces an obsolete summary with a complete current explanation",
+      "mode": "implementation",
+      "triggers": ["comments-and-javadoc"],
+      "prompt": "地址选择逻辑已经改完，请同步更新相关注释，保持文件风格",
+      "fixture": "The accepted requirement, final implementation and tests now select the order-specified sender address whenever present, using the warehouse address only when absent. The old JavaDoc and stage comment say 使用仓库地址生成发件信息. A draft appends 特殊情况支持订单地址 to that sentence. Comparable business methods in this file use multi-line Chinese JavaDoc with concrete conditions and relevant @param tags. This task authorizes documentation updates only; there are no unresolved selection conditions.",
+      "expected_decisions": ["Write a complete current explanation of order-address priority and absence fallback instead of retaining the obsolete default plus a vague exception", "Update the affected JavaDoc and stage comment using the comparable local layout", "Derive factual claims from the confirmed current rule and leave business behavior unchanged", "Make the explanation understandable without the old version or change discussion"],
+      "disallowed_decisions": ["Keep the draft merely because it adds the new behavior to the old sentence", "Use 特殊情况 without identifying the selection condition", "Invent a channel restriction or persistence guarantee", "Reformat unrelated historical comments"]
+    },
+    {
+      "id": "comment-rewrite-preserves-valid-contracts",
+      "title": "Rewriting around current logic keeps still-valid absence and failure guarantees",
+      "mode": "implementation",
+      "triggers": ["comments-and-javadoc"],
+      "prompt": "按新的配置读取逻辑重写这个方法的注释，不要在旧句上继续补丁",
+      "fixture": "The old method JavaDoc says 从数据库读取配置；编码为空时返回 null；读取失败保留原始异常原因；旧配置中的 alias 字段仍可读取. The approved implementation now checks a local cache first and queries the database on a miss. Current callers, tests and configuration confirm that null-code behavior, cause preservation and stored alias compatibility are unchanged. There is no new retry or stale-cache fallback. The draft replacement only says 优先读取缓存配置.",
+      "expected_decisions": ["Describe cache-first lookup and the database miss path as the current rule", "Retain the confirmed null-code behavior, original-cause guarantee and existing alias compatibility in the appropriate documentation", "Compare the rewrite with old documentation to detect supported constraints lost during simplification", "Avoid unsupported retries or recovery promises"],
+      "disallowed_decisions": ["Approve the shorter draft while silently dropping current contracts", "Delete alias compatibility merely because it mentions stored legacy data", "Keep the old database-only claim as the main description", "Change runtime behavior to fit the new wording"]
+    },
+    {
+      "id": "moved-behavior-updates-enclosing-comments",
+      "title": "Comments outside the initially edited lines can become stale when a stage changes",
+      "mode": "review",
+      "triggers": ["comments-and-javadoc", "evidence-and-verification"],
+      "prompt": "这次把准备请求和发送请求拆开了，检查相关说明是否准确",
+      "fixture": "The accepted refactor and final call path move HTTP transmission out of prepareRequest into the caller's sendRequest stage. prepareRequest now only constructs parameters in memory and can still fail local validation. Its unchanged JavaDoc says 构造并发送请求，返回渠道结果, and an enclosing stage comment says 完成渠道调用后保存审计. The caller's final code sends after prepareRequest and saves audit only after that call returns. The initial diff edits method bodies but omits these old comment lines. The task requests review only.",
+      "expected_decisions": ["Include the affected method and enclosing-stage documentation in the task's semantic scope even though the comment lines were not initially edited", "Recommend descriptions matching in-memory preparation, later transmission and the observed audit boundary", "Keep local validation failure semantics visible where meaningful", "Keep the review read-only and avoid unrelated documentation cleanup"],
+      "disallowed_decisions": ["Ignore stale comments solely because they are outside changed lines", "Claim preparation already sends or returns a provider result", "Rename or extract unrelated helpers", "Add an unsupported audit or transaction success guarantee"]
+    },
+    {
+      "id": "accurate-comment-can-survive-small-edit",
+      "title": "Whole-comment review does not require rewriting accurate unaffected prose",
+      "mode": "review",
+      "triggers": ["comments-and-javadoc"],
+      "prompt": "这次只重命名了局部变量，原有注释也要全部重写吗？",
+      "fixture": "The task renames a local variable to the project's clearer term. Input handling, branch conditions, evaluation order, output and failure behavior are unchanged. Current JavaDoc and stage comments accurately describe the complete rule, use current business terminology and match local formatting. No comment refers to the old local variable name. There is no new documentation obligation.",
+      "expected_decisions": ["Read the affected comments against the final code and accept them as still accurate", "Preserve valid wording and scope the review to the local change", "Explain that a complete-comment check is not a requirement for a new phrasing on every edit"],
+      "disallowed_decisions": ["Rewrite all comments solely because code was edited", "Report a finding for retaining accurate prior wording", "Ask for a project-wide comment-style decision", "Remove required JavaDoc because the method remains simple"]
+    },
+    {
+      "id": "comment-update-surfaces-contract-conflict",
+      "title": "Updated prose cannot make an unintended behavior change legitimate",
+      "mode": "implementation",
+      "triggers": ["comments-and-javadoc", "evidence-and-verification"],
+      "prompt": "同步一下这次改动后的注释",
+      "fixture": "The accepted requirement says a missing optional lookup returns null, and affected callers explicitly handle absence. Old JavaDoc describes that rule. The final implementation unexpectedly throws on absence, while newly edited tests assert the throw; no user or formal contract authorized the change. A draft changes the JavaDoc to 缺失时抛出异常 to match the code. The task authorizes documentation updates only.",
+      "expected_decisions": ["Surface the implementation and test discrepancy against the accepted absence contract", "Do not endorse the unexpected throw by changing documentation alone", "Explain the specific conflict and seek direction for the necessary behavior correction or contract decision within the authorized scope", "Preserve unaffected documented guarantees and avoid treating either the old comment or the newest test as sole authority"],
+      "disallowed_decisions": ["Accept the draft because comments must always match the newest code", "Assume a new test authorizes a business-contract change", "Silently repair business code during a documentation-only task", "Treat all old comments as authoritative regardless of current requirements"]
+    },
+    {
+      "id": "end-to-end-fields-include-defaults-and-final-writes",
+      "title": "A field contract follows its actual caller and final response assignment",
+      "mode": "review",
+      "triggers": ["contracts-and-lifecycles", "evidence-and-verification"],
+      "prompt": "确认这个适配接口最终返回的两个标识和名称是否符合已确认契约",
+      "fixture": "The caller sets requestedId=A but never sets displayId. An adapter uses request.displayId when nonblank and otherwise internalId=N. A later group assembler copies that result, changes result.id to G, and leaves the member displayId and member name. The confirmed external contract requires both identity fields and the name of a group result to describe G; member values remain in its details. Current tests assert the copied displayId=N. No behavior changes are authorized beyond this contract review.",
+      "expected_decisions": ["Trace the real caller's omitted field, the adapter default and the final group assembly rather than treating the setter as an interface-wide guarantee", "Identify the mismatched group identity and copied member fields against the confirmed contract", "Explain the required coherent final result and affected test expectation without treating current tests as authority", "Keep review read-only and limit findings to the changed path"],
+      "disallowed_decisions": ["Claim displayId always echoes the caller because the adapter has that branch", "Approve the final result after checking only id", "Treat the existing copied-value assertion as proof of business correctness", "Refactor unrelated adapters"]
+    },
+    {
+      "id": "missing-result-shape-and-eligibility-need-contract",
+      "title": "A downstream omission does not define fallback shape or failure reason",
+      "mode": "implementation",
+      "triggers": ["contracts-and-lifecycles", "evidence-and-verification"],
+      "prompt": "新链路没有结果的项目，和旧接口一样返回 null 吧",
+      "fixture": "The request names A, B and C. A is rejected before sending, B returns a result, and C is sent but omitted from the downstream response. The downstream interface does not distinguish skip, failure and no result for an omitted item. Old examples show an object with value=null for one failed item, but do not guarantee an object for every requested identifier. The draft adds {id:A,value:null,reason:execution failed} and {id:C,value:null,reason:execution failed}. The desired interpretation of null and fallback eligibility has not been confirmed.",
+      "expected_decisions": ["Distinguish omitted items, null elements and retained objects with null fields using a concrete example", "Ask for the material fallback structure and qualifying-input decision after inspecting the available evidence", "Avoid labeling either omission as an established execution failure", "Preserve existing rejection and downstream behavior while the decision remains unresolved"],
+      "disallowed_decisions": ["Fill every requested identifier merely because old examples contain a null value", "Turn rejected input into an apparently executed result", "Invent downstream failure reasons", "Treat zero or false as missing"]
+    },
+    {
+      "id": "deduplicated-work-does-not-define-result-identity",
+      "title": "Work deduplication and first-result selection have distinct identity and evaluation contracts",
+      "mode": "review",
+      "triggers": ["contracts-and-lifecycles", "naming"],
+      "prompt": "这里把几个输入合并处理，然后取第一项结果，是否就只会执行第一项？",
+      "fixture": "Aliases A and B resolve to one internal item N. The code retains [A,B], executes N once, and builds a map N->A using first-input order for result echo; no contract yet establishes whether both aliases must be echoed. Separately, a changed transformation evaluates a script for every source value, collects non-null results and selects the first; the second script can throw or produce a side effect. Empty strings are retained and later statements do not short-circuit script execution. The user requests explanation and review only.",
+      "expected_decisions": ["Explain where original inputs are retained and where the one-value echo map selects only one identity", "Treat the echo policy as a contract to verify rather than declaring all deduplication defective", "Distinguish retaining the first result from evaluating only the first input, including null, blank and later failure behavior", "Avoid changing alias or script execution policy without authorization"],
+      "disallowed_decisions": ["Claim the original list lost B", "Claim only the first script runs", "Replace the selection with short-circuit evaluation without checking side effects", "Assume every alias must produce a separate response"]
+    },
+    {
+      "id": "numeric-comparison-needs-compatible-dimensions",
+      "title": "Observed numbers do not establish a shared unit or comparison basis",
+      "mode": "review",
+      "triggers": ["contracts-and-lifecycles", "evidence-and-verification"],
+      "prompt": "这段按数值取最小的逻辑，能确认结果正确吗？",
+      "fixture": "The changed selector compares BigDecimal values from two sources and copies the selected item's value, unit and details. One source contract allows milliseconds; the other's unit is configurable. Sample logs happen to use milliseconds for both, but configuration and the second source's current guarantee have not been established. Selection is grouped by tenant. The task does not authorize changing units, defaults or failure policy.",
+      "expected_decisions": ["Verify compatible units, grouping and the value-detail relationship before concluding numeric comparison is meaningful", "Separate sample evidence from the unconfirmed source guarantee", "Recommend targeted contract/configuration verification and surface the unresolved policy choice if necessary", "Preserve the approved scope without inventing conversion or rejection behavior"],
+      "disallowed_decisions": ["Claim correctness solely because compareTo selects the smallest number", "Assume a universal unit from the sample logs", "Silently convert using an invented scale", "Report an observed production failure without evidence"]
+    },
+    {
+      "id": "validation-purposes-have-distinct-conditions",
+      "title": "A globally optional value can be required by its actual consumer",
+      "mode": "implementation",
+      "triggers": ["contracts-and-lifecycles"],
+      "prompt": "按已确认规则检查返回数据能否复用，后续处理仍按原流程执行",
+      "fixture": "The shared response model marks credential optional because some operations do not consume it. This operation's declared dependency requires a nonblank credential with the agreed type before reusing the response. A later transformation may independently fail. The accepted policy bases reuse on required source data, not on successful completion of that transformation. Draft code calls the shared optional-model validator and then gates reuse on the later transformation's success.",
+      "expected_decisions": ["Separate shared model validity, this consumer's required source data and later transformation success", "Enforce the confirmed dependency condition even though the global field is optional", "Remove the unsupported later-success gate while preserving ordinary transformation validation and failure behavior", "Keep timing and resource ownership consistent with the approved flow"],
+      "disallowed_decisions": ["Treat optional in the shared model as optional for every consumer", "Assume any later failure makes earlier source data unusable", "Accept transport success as sufficient by itself", "Change unrelated execution or expiry policy"]
+    },
+    {
+      "id": "explicit-policy-can-link-separate-decisions",
+      "title": "Purpose separation preserves a deliberate policy coupling when it is approved",
+      "mode": "review",
+      "triggers": ["contracts-and-lifecycles"],
+      "prompt": "这个数据只在整个业务成功后复用，会不会不合理？",
+      "fixture": "An explicit approved policy permits reuse only after the business transaction commits because failed attempts must remain isolated. The source data can be structurally valid even when that transaction fails, but reuse-after-commit is a deliberate policy rather than an accidental shared predicate. The implementation uses the existing transaction completion owner and releases temporary state on failure. No contrary requirement is present.",
+      "expected_decisions": ["Recognize the distinction between structural validity and approved reuse eligibility", "Preserve the explicit after-commit policy and existing lifecycle owner", "Avoid treating purpose separation as a universal rule forbidding deliberate coupling"],
+      "disallowed_decisions": ["Remove the commit condition merely because source data is valid", "Move reuse before commit without approval", "Report a defect solely because two decisions are intentionally linked"]
+    },
+    {
+      "id": "assembled-result-does-not-mix-unmarked-versions",
+      "title": "Enrichment must preserve the meaning of historical and current data",
+      "mode": "review",
+      "triggers": ["contracts-and-lifecycles", "method-design"],
+      "prompt": "为详情页补一个字段，这个后端实现是否合适？",
+      "fixture": "A detail endpoint returns a saved definition snapshot. The proposed change performs extra identity queries, recursively indexes current definitions and inserts their current flag into each saved field while leaving saved type and path unchanged. The response has no version/source distinction. The page already fetches the current definition through its authoritative endpoint. Whether other clients depend on the proposed enrichment is not yet known. The task requests design review only.",
+      "expected_decisions": ["Identify the mixed-version meaning and duplicated definition ownership", "Check actual consumers and existing data availability before recommending the minimal assembly location", "Explain that extracting the added logic into a helper does not remove duplicate queries or mixed semantics", "Preserve the stored snapshot contract until an intentional compatible enrichment is confirmed"],
+      "disallowed_decisions": ["Approve mixing versions because the resulting DTO compiles", "Move the same reconstruction into a new service and claim the responsibility issue is solved", "Assume all consumers are the known page", "Delete saved snapshot fields without authorization"]
+    },
+    {
+      "id": "derived-artifact-uses-effective-representation",
+      "title": "Checksums and signatures use the representation actually consumed",
+      "mode": "review",
+      "triggers": ["contracts-and-lifecycles", "remote-calls"],
+      "prompt": "已有脚本能算摘要，是不是可以直接替代发送前的摘要组件？",
+      "fixture": "The protocol checksum covers the final transmitted bytes. An existing source-field script executes before defaults, destination type conversion and JSON serialization, and cannot access the completed destination request. A proposed replacement independently reconstructs the destination body inside that script. The current sending component computes the checksum from the final byte buffer and sends that same buffer. The user asks whether replacement reduces complexity.",
+      "expected_decisions": ["Compare data availability and execution timing rather than only algorithm capability", "Preserve the checksum's final-byte contract and avoid a second independently maintained body transformation", "Retain the existing component when it already owns the correct representation boundary", "Evaluate a new extension point only if a confirmed broader need justifies it"],
+      "disallowed_decisions": ["Approve replacement merely because both can calculate a checksum", "Assume pre-conversion objects equal final wire bytes", "Add a generic scripting framework for this one replacement", "Change protocol behavior to fit the available script"]
+    },
+    {
+      "id": "storage-representation-change-preserves-round-trip",
+      "title": "Internal encoding changes coordinate readers, writers and historical interpretation",
+      "mode": "implementation",
+      "triggers": ["contracts-and-lifecycles", "evidence-and-verification"],
+      "prompt": "按已确认方案调整存储编码，详情接口仍返回原有对象结构",
+      "fixture": "The approved internal format escapes restricted map keys recursively, including maps inside arrays, and marks new records with a format version. Details return the original object structure. Old records have no marker and can contain literal text resembling the escape sequence. Draft code updates writes, decodes every old and new key unconditionally, and changes nested arrays to JSON strings. No historical migration is authorized.",
+      "expected_decisions": ["Keep write/read handling paired and interpret the new encoding only for the established format identity", "Preserve original nested types and caller-visible keys through a supported round trip", "Check encoding collisions and legacy literals without silently decoding historical data", "Keep migration and unrelated stored data outside scope"],
+      "disallowed_decisions": ["Change only the write path", "Decode all legacy literals as new escapes", "Return strings where the public contract requires objects or arrays", "Run an unrequested historical migration"]
+    },
+    {
+      "id": "moving-operation-preserves-catch-and-batch-boundaries",
+      "title": "Relocation preserves invocation scope and caller-visible failure behavior",
+      "mode": "review",
+      "triggers": ["contracts-and-lifecycles", "exception-communication"],
+      "prompt": "把补充查询移到下层统一处理后，检查行为有没有变化",
+      "fixture": "Originally, the service collects identifiers across all groups, performs one enrichment lookup, and propagates lookup failure to the caller. The proposed move performs the lookup inside each group's existing catch block, which turns exceptions into an empty group result. Normal fixtures still return identical objects. The lookup interface is shared by other callers, and old/new service versions may coexist during deployment. The approved migration changes ownership but preserves failure and output contracts.",
+      "expected_decisions": ["Identify the changed lookup count, batching and swallowed failure despite equal normal outputs", "Preserve one intended enrichment owner and the confirmed whole-operation failure contract", "Check consumers and mixed-version deployment for duplicate execution or incompatible assumptions", "Keep unrelated group-failure policy unchanged"],
+      "disallowed_decisions": ["Approve from normal response equality alone", "Treat lookup failure as empty data without an approved change", "Leave both old and new owners executing the same adaptation", "Expand the shared interface's failure contract for every caller"]
+    },
+    {
+      "id": "remove-unsupported-check-before-adding-control-flag",
+      "title": "An unnecessary new failure branch does not justify a new option",
+      "mode": "implementation",
+      "triggers": ["contracts-and-lifecycles", "evidence-and-verification"],
+      "prompt": "这次新增校验影响了原调用方，请按原需求修正",
+      "fixture": "The accepted task adds an optional display property to an existing bulk read API, keeps its input unchanged and leaves missing display metadata absent. The draft introduced a strict exception when that metadata is missing, affecting callers that never use it. To contain the new exception, a proposed fix adds includeDisplayValidation=false and another public query method. No security, persistence or safety invariant requires the strict check.",
+      "expected_decisions": ["Reconsider and remove the unsupported strict failure branch against the accepted contract", "Preserve the unchanged request shape and existing absence semantics", "Avoid adding flags or APIs solely to control behavior introduced unnecessarily by this task", "Retain any independently required validation rather than generalizing this correction into a validation ban"],
+      "disallowed_decisions": ["Present a new feature flag as a required product decision", "Add a second API without establishing a need", "Make every old caller supply the new option", "Remove unrelated safety checks"]
+    },
+    {
+      "id": "validation-does-not-hide-query-result-output",
+      "title": "Query data remains explicit without hidden output parameters or duplicate I/O",
+      "mode": "implementation",
+      "triggers": ["method-design", "evidence-and-verification"],
+      "prompt": "这段校验到响应组装的代码有些绕，按最小范围整理一下",
+      "fixture": "A new map is passed through validateInput -> validateItems -> queryAllowedItems; the last method populates it so final response assembly can recover item names. The query already produces a complete AllowedItem list needed by validation. No current caller intentionally treats validateInput as a data-producing API. A proposed simplification either repeats the remote query at assembly time or introduces a large request context class. The confirmed requirement is one existing query with unchanged validation behavior.",
+      "expected_decisions": ["Expose the existing query result explicitly and let validation and assembly consume it at clear points", "Preserve one query and the existing validation order, rejection scope and output", "Avoid a context carrier or wrapper family solely to hide the output parameter", "Limit the change to the affected flow"],
+      "disallowed_decisions": ["Keep mutation hidden behind a validation-only name without explanation", "Add another remote call to recover already available values", "Introduce a context hierarchy just to remove the map parameter", "Change which items pass validation"]
+    },
+    {
+      "id": "copy-and-mutation-simplification-respects-ownership",
+      "title": "Redundant copies can be removed while explicit mutation and required isolation remain",
+      "mode": "review",
+      "triggers": ["method-design", "contracts-and-lifecycles"],
+      "prompt": "这些参数修改和深拷贝是不是都应该去掉？",
+      "fixture": "Two consecutive assembly helpers recursively copy the same payload with no mutation or ownership transfer between them. After assembly the original payload can be modified before a deferred consumer serializes the snapshot, so one isolated copy remains necessary. A separate updateFields(target, changes) method is an intentional in-place API whose name, JavaDoc and callers clearly expose mutation. No measured performance bottleneck is established.",
+      "expected_decisions": ["Identify the second consecutive copy as lacking additional isolation benefit", "Retain the snapshot required across the later mutation/deferred-consumer boundary", "Accept the clearly documented mutation API rather than treating all parameter mutation as hidden output", "Describe evidenced extra traversal without claiming a measured production bottleneck"],
+      "disallowed_decisions": ["Remove every copy to reduce code", "Require an immutable replacement object for every explicit mutation API", "Claim class count proves overdesign", "Invent performance measurements"]
+    },
+    {
+      "id": "diagnostics-have-one-observable-stage-owner",
+      "title": "Diagnostic lifecycle does not obscure or reverse-depend on business implementation",
+      "mode": "review",
+      "triggers": ["method-design", "evidence-and-verification"],
+      "prompt": "流程总览已经有了，但业务代码读起来很乱，看看怎么收敛",
+      "fixture": "A changed flow starts trace stage X in a private preparation helper and finishes it in a different caller after execution. Several executors inspect the logging module's nested private snapshot to recover identifiers already available through the shared trace correlation. Request construction can fail before any response exists. Existing operation-boundary interception can observe completion and failure; only the local conversion helper knows a failed field path. The approved requirement retains one summary and useful failure detail without changing operation order or failure handling.",
+      "expected_decisions": ["Choose an existing boundary that can own the stage's start and finish, retaining only locally known failure details at their source", "Remove unnecessary business dependence on the logging module's internal snapshot representation", "Keep early-failure metadata truthful without fabricating a response payload", "Preserve correlation, cleanup and actual outcomes without adding a generic framework or changing private visibility solely for tracing"],
+      "disallowed_decisions": ["Replace every log statement with another wrapper while leaving ownership scattered", "Make private methods public solely so annotations can intercept them", "Drop required failure evidence to make the business path shorter", "Treat an absent response body as proof that no failure record exists"]
+    },
+    {
+      "id": "error-identifies-direction-without-guessing-cause",
+      "title": "Shared errors carry enough boundary context to locate the unmet condition",
+      "mode": "implementation",
+      "triggers": ["exception-communication"],
+      "prompt": "这个缺字段提示让调用方看不懂，请改清楚，校验逻辑保持不变",
+      "fixture": "A shared validator is called for inbound source data and generated outbound requests. This changed call validates the destination request before sending, and the caller knows the destination operation and field path. The current message says BUSINESS required field missing: customer.id. Failure can result from absent source input, missing transformation configuration or a transformation returning null; this boundary cannot distinguish those causes. No downstream request has been sent and no error-code change is authorized.",
+      "expected_decisions": ["Use the established caller-facing operation, destination-request context and safe field path to identify the observed missing required value", "Supply direction from the actual caller or owning boundary rather than guessing it in the generic validator", "Avoid asserting a unique source/configuration cause or suggesting an unsupported fix", "Preserve code, validation order and the distinction from a downstream rejection"],
+      "disallowed_decisions": ["Keep only the internal BUSINESS role as location context", "Claim the provider rejected the request", "Say configuration must be wrong when source absence is also possible", "Refactor validation logic during a wording-only task"]
     }
   ]
 }

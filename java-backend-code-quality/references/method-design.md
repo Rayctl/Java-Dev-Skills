@@ -1,6 +1,6 @@
 # Method Design And Small Abstractions
 
-Read this reference when changed code adds, edits, extracts, wraps, reuses, or calls an application-defined private helper; extracts compact logic or literals into a private field or constant; introduces deferred execution; designs or changes parameters; adds or edits a nested class, local class, or nested enum; or raises an abstraction-granularity question. Do not load it for annotations, imports, independent contract constants, or already clear framework methods unless their changed use makes parameter meaning unclear.
+Read this reference when changed code adds, edits, extracts, wraps, reuses, or calls an application-defined private helper; extracts compact logic or literals into a private field or constant; adds diagnostic scaffolding; introduces deferred execution; designs or changes parameters; adds or edits a nested class, local class, or nested enum; or raises an abstraction-granularity question. Do not load it for annotations, imports, independent contract constants, or already clear framework methods unless their changed use makes parameter meaning unclear.
 
 ## Compare With The Code At Its Use Sites
 
@@ -79,6 +79,20 @@ Use intermediate values and parameters only when they expose a real processing s
 Use deferred functions only when a lock, retry, transaction, cache, fallback, or asynchronous API genuinely requires deferred execution. Verify when and how often the function runs, which state it captures, and whether exception behavior remains unchanged.
 
 Do not hide meaningful I/O, mutation, retry, fallback, compensation, or cleanup behind a method that appears to be a pure calculation or predicate. Method names and boundaries must expose caller-relevant effects.
+
+## Read The Whole Normal Path
+
+Check whether a supposedly input-only parameter is a hidden output. Passing a mutable map through validation helpers to collect data for later assembly couples otherwise separate responsibilities. Prefer returning the existing query result explicitly and letting validation and assembly consume it when that clarifies the path. Keep deliberate mutation APIs whose names and contracts expose it; do not introduce a context class, wrapper family, or another remote call merely to remove an output parameter.
+
+Before adding queries, recursive indexes, conversion passes, or snapshots, identify their owner and consumer. A new component that only relocates duplicate work or reconstructs another owner's model does not resolve the underlying cost or responsibility overlap. Remove consecutive redundant copies only after checking mutation and ownership boundaries; retain isolation needed for deferred execution or independent consumers. An unused return value is a signal to inspect the method's real contract, not permission to remove a public or framework result.
+
+After reviewing individual stages, read the complete operation from input to result. Check whether diagnostic payload assembly, early declarations with later assignments, or repeated exception wrappers obscure the actual work. A variable initialized to null only for a distant summary can blur not-started, failed, and absent-result states. Prefer values near their first meaningful use and diagnostics near the boundary they describe when the contract permits.
+
+Do not add an outer try/finally, mutable status carrier, helper family, or shared parameter object merely to collect one summary. Compare the complete alternatives, including failure paths and new navigation, rather than optimizing each local block separately. Use [exception-communication.md](exception-communication.md) for the purpose of each catch and [remote-calls.md](remote-calls.md) for diagnostic coverage.
+
+An operation-wide summary, finally block, or shared trace state can remain when it owns a real audit, completion, or cleanup contract and makes all exits easier to verify. Preserve that contract and meaningful exception conversion. Simplification must retain log correlation, required event ordering, causes, and resource closure; fewer variables or try blocks alone do not prove improvement. Grade needless scaffolding as P3 when it only costs reading effort, and by actual impact when it hides or changes behavior.
+
+Keep diagnostic ownership coherent: begin and finish a stage at a boundary that can observe both, and obtain local details where they are known. Business code should not inspect a logging module's private snapshot structure just to recover a value that can be correlated elsewhere or supplied explicitly. Reuse existing interceptors or lifecycle hooks when they actually cover the path; do not make private methods public, require a proxy, or add a generic tracing framework merely to remove visible log statements. Missing response payloads on early failures can be legitimate; retain actual stage and failure metadata rather than inventing a response that never existed.
 
 ## Initialization Entrances And Recursive Workers
 

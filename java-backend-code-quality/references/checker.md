@@ -20,6 +20,8 @@ The checker is read-only. It must not infer authorship by scanning the whole pro
 
 Changed-mode diffs use `--text`, with external diff and text conversion disabled, so a binary Git attribute cannot silently hide Java text changes. Unexpected non-text diff output is an input error, not a clean result. Brace findings carry evidence from the control header through its corresponding statement body, allowing body-only edits and brace deletions to intersect the selected scope without scanning unrelated statements as new findings.
 
+Business before/after snapshots, relevant input/output evidence, event correlation, truthful outcome labels, and familiar but precise naming require semantic review. The checker does not require paired logs, count log calls, ban uncommon words, or prove that a recorded value reflects the intended point in time. Logging also does not replace input/output correctness tests.
+
 ## Rule Identifiers
 
 - `STYLE-COMMENT-001`: a Java comment ends with `。` or `.`
@@ -47,6 +49,8 @@ Repeated decisions, branch concentration, structural-literal meaning, and whethe
 
 Incremental checkpoints are an implementation workflow, not a checker rule. The read-only checker observes a selected code snapshot and cannot prove that earlier stage handoffs were reviewed during editing.
 
+Whole-path readability, the necessity of diagnostic state or exception wrapping, correlation across failure logs, and the distinction between task decisions and durable project hints require semantic review. A passing checker also cannot prove incident causality or behavior hidden behind test mocks. Do not add try-count, variable-count, or log-keyword rules for these decisions.
+
 Comment wording, pronoun clarity, useful information, and evidence for claimed reasons or guarantees require semantic review. Do not use a word blacklist or add filler to silence an intent finding. Missing-comment reports are candidates for inspection: preserve required documentation, verify the hidden rule, and explain it concretely; the checker does not prove that a comment is accurate or readable.
 
 Method cohesion, cohesive parameter values, changing snapshots, loop-versus-stream choice, resource ownership, suppressed failures, timeout uncertainty, retry amplification, and idempotency require semantic review. The checker does not enforce method-size or parameter-count limits, extract every literal, require streams, close every `AutoCloseable`, or prescribe retry counts. Source-informed recommendations remain subordinate to current contracts and explicit project rules.
@@ -54,6 +58,8 @@ Method cohesion, cohesive parameter values, changing snapshots, loop-versus-stre
 Separating a database query, remote call, or non-trivial preparation from an enhanced-for source is a semantic readability preference. The checker does not classify methods by name, flag every source call, or prove lazy evaluation and resource-scope equivalence. It adds no automatic rule for this preference; review must distinguish simple accessors and preserve repeated conditions in other loop forms.
 
 ## Exit Codes
+
+End-to-end field provenance and final assignments, loss of identity/cardinality, concrete absence shapes, comparable units, mixed versions, representation round trips, purpose-specific predicates, hidden output parameters, and exception-boundary changes require semantic review. The checker does not prove them from setters, class names, test counts, or log presence, and does not add keyword rules for these decisions.
 
 - `0`: no violations for the selected scope
 - `1`: one or more violations, with file, line, rule identifier, and evidence

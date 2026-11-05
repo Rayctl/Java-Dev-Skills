@@ -1,6 +1,6 @@
 # Java Naming Reference
 
-Read this reference when an added or changed name uses generic vocabulary, an enum lookup is added or changed, a rename is under review, or a caller cannot understand the complete responsibility from the call site. Do not load it merely because a change introduces otherwise clear identifiers.
+Read this reference when an added or changed name uses generic or unfamiliar vocabulary, an enum lookup is added or changed, a rename is under review, or a caller cannot understand the complete responsibility from the call site. Do not load it merely because a change introduces otherwise clear identifiers.
 
 ## Call-Site Test
 
@@ -15,6 +15,24 @@ Do not make the caller depend on an implementation jump or JavaDoc to learn the 
 Apply the same semantic check to fields, parameters, and local variables. When the type does not fully identify the value, the name should reveal its data, state, source, scope, or intended consumer. Do not use generic carriers merely because the static type is broad.
 
 Use the same established domain term for the same concept across the changed path. Do not alternate synonyms that suggest different responsibilities, or add every implementation detail to a name. Include only distinctions the caller needs; receiver context and types may provide the rest. Names such as `validated`, `latest`, or `saved` describe an established state, not an intended next step. Rename or separate a value when its role changes rather than letting a stale name claim a guarantee the code has not established
+
+## Prefer Familiar, Precise Words
+
+When two names express the same contract accurately, prefer words the project's developers can understand on first reading. Use a familiar action plus the concrete business subject and only caller-relevant distinctions. Do not choose a rare synonym to sound technical, use unexplained abbreviations to shorten it, or pack the implementation into a sentence-length name. Apply this to new or changed method names and related identifiers; do not rename unrelated history.
+
+Read the primary call site again: must the reader first translate an unfamiliar word to understand the operation, and is there an equally accurate common expression? For example, only when these are the actual responsibilities:
+
+| Actual responsibility | Less direct name | More direct name |
+| --- | --- | --- |
+| Fill missing address fields from already available data | `hydrateAddress` | `fillMissingAddressFields` |
+| Repair an inconsistent schema revision | `reconcileSchemaRevision` | `repairSchemaRevision` |
+| Construct a shipment request in memory | `instantiateShipmentRequest` | `buildShipmentRequest` |
+
+These examples are not substitutions or a forbidden-word list. If reconciliation compares two sources, resolves conflicts, and synchronizes both, `repair` may be inaccurate. If hydration loads data remotely or persists changes, a name suggesting only in-memory filling hides relevant behavior. Preserve the existing operation, absence rules, and side effects when renaming.
+
+Keep established business terms, Java and technical vocabulary such as `serialize`, `rollback`, and `commit`, and required interface or third-party signatures when they carry precise shared meaning. Check comparable current names before inventing a simpler synonym; simplify the surrounding action when possible. Do not replace a precise term with `process` or `handle` merely because those words are familiar. An unfamiliar-to-one-reader term is not automatically a defect; explain the concrete reading problem and an equally accurate alternative.
+
+This is a readability preference subordinate to explicit user and formal project requirements. Mere vocabulary difficulty is at most `P3`; a misleading name that hides a caller-relevant contract follows the impact-based naming severity below. Do not add a dictionary or keyword-based Python rule.
 
 ## Generic Actions
 

@@ -1,6 +1,6 @@
 # Contracts And Lifecycles
 
-Read this reference only when changed Java backend code coordinates multiple stages, side effects, resources, transactions, asynchronous work, retries, caches, compensation, concurrency-sensitive writes, or non-obvious caller-visible failure policies. For remote calls, use this reference only when those lifecycle concerns also apply; logging and downstream error preservation belong to [remote-calls.md](remote-calls.md). Return to `SKILL.md` without applying this reference when the change is a trivial accessor, data holder, pure predicate, or mechanical edit with none of those concerns.
+Read this reference when changed code coordinates multiple stages, correlated results, representation changes, side effects, resources, transactions, async work, retries, caches, compensation, concurrency-sensitive writes, or non-obvious failure policies. For remote calls, load it only when those concerns apply; remote logging and downstream errors belong to [remote-calls.md](remote-calls.md). Skip trivial accessors, data holders, pure predicates, and mechanical edits without these concerns.
 
 ## Reconstruct The Behavior
 
@@ -24,6 +24,28 @@ For each stage, identify:
 - synchronous, asynchronous, and cross-module boundaries
 
 Trace the happy path and meaningful absence, rejection, concurrency, and failure paths. Do not assume another layer enforces a contract without tracing the real call path.
+
+## Follow Values To The Final Consumer
+
+For a changed multi-stage contract, walk a representative concrete input through the actual caller, transformations, and final observable result. Trace related fields together: who supplies each value, whether the caller actually sets it, which default applies, which later step overwrites it, and how the next consumer uses it. A setter or similarly named DTO field does not establish the whole interface contract. Check the last effective assignment after adapters, enrichment, aggregation, and response assembly. Keep correlated identity, value, unit, detail, and status fields coherent; do not assume copying an object and replacing one field yields a valid final result.
+
+Inspect changes in cardinality and identity. A one-value map cannot preserve every alias when several inputs resolve to one internal identity; deduplicating work does not itself define how original inputs appear in the response. Establish the permitted grouping, selection, ordering, and echo policy from the contract. Taking the first retained result also does not prove only one input was evaluated: check filtering, null/blank rules, short-circuit timing, exceptions, and side effects before changing evaluation.
+
+Distinguish an omitted result, a null list element, a retained object with null fields, an empty collection, zero, false, and an explicit failure. Before adding fallback objects or claiming compatibility, confirm the concrete structure and which inputs qualify. A downstream omission alone cannot establish whether an item was rejected, skipped, failed, never requested, or simply produced no result. Preserve known distinctions and ask when the remaining ambiguity changes behavior; do not fabricate a reason or broaden fallback to all missing inputs.
+
+For sorting, selecting, summing, or comparing values, verify common units, currency, time basis, precision, and grouping where relevant. Example logs with one unit are not proof of a universal guarantee. Reuse confirmed conversion or validation; do not invent a default currency, exchange rate, conversion, or rejection policy. Check that the selected value and its supporting details belong to the same result and that mutable copies do not corrupt other entries.
+
+## Preserve Representation And Version Meaning
+
+Identify whether a field comes from a saved snapshot, live configuration, or a derived value. Combining versions may be intentional, but requires an explicit compatible meaning; do not silently present historical fields and current properties as one consistent snapshot. First check whether the existing data owner already supplies the required information instead of reconstructing its model elsewhere.
+
+Validate, sign, compare, or snapshot the representation the operation actually consumes. An intermediate object may differ from the final serialized request after defaults, type conversion, escaping, or encoding. Do not independently rebuild the same transformation in a script or helper to approximate unavailable final data. Reuse the correct existing stage or surface a necessary design choice.
+
+When persistence or transport representation changes, check paired write/read paths, legacy interpretation, nested structures, key collisions, types, and caller-visible output. Claim reversibility only for supported inputs; retain format identity when needed to avoid decoding old values as a new format. Do not silently change public JSON shape to satisfy storage constraints or migrate unrelated historical data without authorization.
+
+## Move Behavior With Its Boundaries
+
+Before moving an operation across methods, loops, services, or layers, compare consumers, available context, invocation count, batching, ordering, catch scope, transaction scope, and deployment compatibility. A failure formerly propagated to the caller may become a swallowed per-item failure after a move, even when normal outputs match. Keep one intended owner and remove obsolete duplicate execution when migration is approved. Do not add flags or new APIs merely to contain an unnecessary failure branch introduced by the task; first reconsider that branch against the actual requirement. Preserve required safety checks and concurrency guarantees rather than removing them solely because contention seems unlikely.
 
 ## Correctness And Contracts
 
@@ -63,6 +85,8 @@ Determine whether the current boundary owns a resource, borrows it, or transfers
 For remote timeouts and repeated attempts, apply [remote-calls.md](remote-calls.md). A timeout does not prove that the provider rejected the request or performed no side effect
 
 ## Validation Ownership
+
+Separate purposes before reusing a predicate: structural validity, fields required by the current consumer, permission to execute, eligibility for reuse or caching, business success, and committed state have different contracts. A globally optional field can still be required by a particular operation; a later business failure does not by itself prove earlier data is invalid. Share checks only when their subject, time, absence semantics, and failure consequence agree. Preserve an explicitly approved policy that deliberately links these decisions rather than replacing it with a generic default.
 
 Locate one authoritative owner for each rule:
 

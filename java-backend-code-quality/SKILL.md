@@ -5,7 +5,7 @@ description: Create, modify, or review Java backend code with change-scoped corr
 
 # Java Backend Code Quality
 
-Use for Java backend creation, modification, or review. Apply rules only to the task-owned production and test changes; load detailed references only when their trigger matches.
+Apply only to task-owned Java production/test changes; load detailed references when triggered.
 
 ## Scope And Authority
 
@@ -25,15 +25,15 @@ For confirmed worktrees, read [references/project-guidance.md](references/projec
 
 Read only the matching references:
 
-- [method-design.md](references/method-design.md): private helpers, compact fields or constants, wrappers, deferred work, parameter meaning or shape, added or edited nested types, or method-granularity questions
+- [method-design.md](references/method-design.md): helpers, compact fields or constants, wrappers, diagnostic scaffolding, deferred work, parameter meaning, new or edited nested types, or method granularity
 - [structure-choice.md](references/structure-choice.md): growing implementations, repeated varying flows, scattered creation, or runtime-selected behavior during implementation
 - [comments-and-javadoc.md](references/comments-and-javadoc.md): changed classes, methods, JavaDoc, comments, guard clusters, or non-trivial method bodies
-- [naming.md](references/naming.md): broad names, state or collection vocabulary, enum lookups, renames, `normalize`, or unclear caller responsibility
+- [naming.md](references/naming.md): vague or unfamiliar words, state/collection names, enum lookups, renames, `normalize`, or unclear responsibility
 - [exception-communication.md](references/exception-communication.md): changed failure messages, failure logs, `catch`, `finally`, or error mapping
 - [remote-calls.md](references/remote-calls.md): HTTP, Feign, RPC, external SDK, or their logging, response parsing, error mapping, and provider failures
-- [contracts-and-lifecycles.md](references/contracts-and-lifecycles.md): transactions, cross-store behavior, async work, retries, caches, compensation, locks, resources, or non-obvious failure policy
+- [contracts-and-lifecycles.md](references/contracts-and-lifecycles.md): multi-stage adaptation, correlated results, transactions, cross-store/async work, retries, caches, compensation, locks, resources, or failure policy
 - [control-flow.md](references/control-flow.md): ternaries, branches, repeated decisions, structural literals, loops, braces, or long expressions
-- [evidence-and-verification.md](references/evidence-and-verification.md): existing behavior or data semantics, related fields, legacy logic, evidence conflicts, or tools that rewrite files
+- [evidence-and-verification.md](references/evidence-and-verification.md): existing behavior/data, related fields, business diagnostics, legacy logic, evidence conflicts, or file-rewriting tools
 - [checker.md](references/checker.md): advanced scope, exact CLI behavior, errors, or rule identifiers
 
 ## Quality Gates
@@ -42,10 +42,10 @@ These are hard quality gates for changed behavior:
 
 - preserve caller-visible semantics the task does not authorize changing; implement approved behavior changes and update affected callers and tests rather than treating old code as the specification
 - make names and call sites reveal the subject, action, result, parameter meaning, and meaningful side effects; expose collection key/cardinality and duplicate policy
-- trace related values through validation, mapping, serialization, persistence, remote calls, caches, logs, errors, and outputs
+- trace related values through validation, mapping, serialization, persistence, remote calls, caches, logs, errors, and outputs; preserve permitted evidence of key inputs, changes, and results needed for diagnosis
 - assign clear owners and safe ordering for validation, state transitions, persistence, cleanup, delayed work, retries, compensation, and resources
 - do not hide meaningful I/O, mutation, fallback, retry, compensation, cleanup, or lifecycle changes inside an apparently pure calculation
-- document independent public or application-defined business actions and stages; write plain, concrete, evidence-backed intent comments for hidden reason, precondition, handoff, order, compatibility, or failure consequence. Keep a primary state write visible before later multi-line diagnostic-log assembly when that matches the real contract; if the log block could obscure what changed, explain the transition and what completed change the log records. Preserve required audit and failure ordering, and do not force a comment before an obvious adjacent one-line log
+- document independent public or application-defined business actions and hidden stage contracts with plain, evidence-backed intent comments; keep primary state writes and diagnostic stages distinguishable while preserving audit and failure order, without annotating obvious adjacent one-line logs
 - compare short helpers, fields, and constants with writing them at use sites; reuse count, JavaDoc, or a clear name alone does not justify extraction
 - comment behavior-changing `catch` branches before fallback, degradation, retry, suppression, continuation, compensation, or exception conversion; transparent direct rethrows are exempt
 - keep error code, exception type, message, actual failure reason, and effective recovery action aligned
@@ -58,7 +58,8 @@ These are default coding preferences, subordinate to project formatter, `AGENTS.
 - exactly one blank line separates method declarations
 - control-flow bodies use braces
 - collection variables expose `List`, `Set`, or `Map` where that improves call-site reading
-- dense ternaries become braced `if` statements; line wrapping follows project limits and scanability
+- prefer familiar, precise words in names
+- use braced `if` for dense ternaries and wrap lines for project limits and scanability
 - prefer direct values or independent types over nested classes, local classes, and nested enums unless nesting clearly improves cohesion or satisfies a contract
 
 A preference-only violation is at most `P3`; a contract, lifecycle, diagnostic, security, or unsafe-maintenance consequence may be `P2` or higher. The preference layer never overrides stronger repository evidence.
@@ -69,8 +70,8 @@ Before changing production behavior, quietly check whether the current task adds
 
 ## Verification And Findings
 
-Test changed input, output, absence, failure, and state semantics. During implementation follow the incremental loop in [references/evidence-and-verification.md](references/evidence-and-verification.md); after any file-changing tool, reread status, final diff, affected files, recompute triggers, and rerun invalidated checks. Separate passed checks from checks that did not run or could not start.
+Test changed input, output, absence, failure, and state semantics. Follow the incremental loop in [references/evidence-and-verification.md](references/evidence-and-verification.md); reread the final diff and affected files after file-changing tools, recompute triggers, and rerun invalidated checks. Also read the whole normal path: logging and exception scaffolding must earn their complexity. Check diagnostic coverage against relevant failure scenarios; report test and mock boundaries separately from unverified behavior.
 
 Assign findings to evidenced violations or concrete problems, not merely to another valid design or a requested improvement. Use `P0` for data loss, security exposure, or system-wide outage; `P1` for likely incorrect behavior, lifecycle leaks, or broken contracts; `P2` for hidden semantics, misleading recovery, unsafe disclosure, or unsafe maintenance; `P3` for local clarity or preference style. Before closing, recheck scope, callers, names, method design, JavaDoc, stages, catches, errors, diagnostics, remote and lifecycle rules, tests, checker output, and residual risks.
 
-Semantic cases under `evals/` are forward tests, not proof from JSON structure alone. The deterministic checker cannot judge natural-language quality, helper extraction, structure choice, semantic neighborhoods, error mapping, logging disclosure, or other meaning-dependent decisions.
+Cases under `evals/` require behavioral evaluation; valid JSON alone proves no behavior. The checker cannot judge prose, naming, extraction, structure, semantic relationships, error mapping, logging policy, or diagnostic sufficiency.
