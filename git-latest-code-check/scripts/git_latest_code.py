@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check a Git worktree against its remote branch and fast-forward when approved."""
+"""Inspect Git task targets, check remote state, and safely fast-forward."""
 
 from __future__ import annotations
 
@@ -180,6 +180,55 @@ def read_config(repository: Path, key: str) -> str | None:
     if result.returncode not in (0, 1):
         raise GitError(last_output_line(result) or f"cannot read configuration: {key}")
     return None
+
+
+def require_expected_state(
+    state: RepositoryState,
+    expected_branch: str | None = None,
+    expected_head: str | None = None,
+) -> None:
+    """Compare explicit task intent, never infer intent from the current branch."""
+    if expected_branch is not None and state.branch != expected_branch:
+        raise ActionRequired(
+            "WRONG_BRANCH",
+            f"expected branch {expected_branch}; actual branch {state.branch}; "
+            "stop this action and confirm the task target; no branch switch was attempted",
+            state,
+        )
+    if expected_head is not None:
+        if not re.fullmatch(r"[0-9a-fA-F]{40}|[0-9a-fA-F]{64}", expected_head):
+            raise InputError("--expect-head requires a full commit SHA")
+        if state.local_sha.lower() != expected_head.lower():
+            raise ActionRequired(
+                "WORKTREE_CHANGED",
+                f"expected HEAD {expected_head}; actual HEAD {state.local_sha}; "
+                "reinspect the changed code before continuing",
+                state,
+            )
+
+
+def inspect_repository(
+    repository: Path,
+    expected_branch: str | None = None,
+    expected_head: str | None = None,
+) -> int:
+    """Local observation only; not a remote-freshness or development exemption."""
+    state = None
+    try:
+        state = read_repository_state(repository)
+        require_expected_state(state, expected_branch, expected_head)
+    except ActionRequired as error:
+        emit_status(error.status, error.state or state, None, detail=error.detail)
+        return EXIT_ACTION_REQUIRED
+    except (InputError, GitError) as error:
+        emit_status("ERROR", state, None, detail=str(error))
+        return EXIT_ERROR
+    emit_status(
+        "LOCAL_STATE", state, None,
+        detail="local observation only; remote not queried; "
+               "does not satisfy missing remote-target or freshness prerequisites",
+    )
+    return EXIT_OK
 
 
 def validate_remote(repository: Path, remote: str) -> None:
@@ -363,12 +412,16 @@ def check_repository(
     repository: Path,
     explicit_remote: str | None,
     explicit_branch: str | None,
+    *,
+    expected_branch: str | None = None,
+    expected_head: str | None = None,
 ) -> int:
     state: RepositoryState | None = None
     target: RemoteTarget | None = None
     remote_sha: str | None = None
     try:
         state = read_repository_state(repository)
+        require_expected_state(state, expected_branch, expected_head)
         target = resolve_target(state, explicit_remote, explicit_branch)
         try:
             remote_sha = read_remote_sha(repository, target)
@@ -414,10 +467,14 @@ def update_repository(
     repository: Path,
     explicit_remote: str | None,
     explicit_branch: str | None,
+    *,
+    expected_branch: str | None = None,
+    expected_head: str | None = None,
 ) -> int:
     state: RepositoryState | None = None
     try:
         state = read_repository_state(repository)
+        require_expected_state(state, expected_branch, expected_head)
         target = resolve_target(state, explicit_remote, explicit_branch)
     except ActionRequired as error:
         state = error.state or state
@@ -628,12 +685,17 @@ def diagnostic_state(repository: Path, fallback: RepositoryState | None = None) 
         return fallback
 
 
-def verify_push(repository: Path, remote: str, branch: str) -> int:
+def verify_push(
+    repository: Path, remote: str, branch: str, *,
+    expected_branch: str | None = None,
+    expected_head: str | None = None,
+) -> int:
     state = None
     remote_sha = None
     target = RemoteTarget(remote, branch, f"refs/heads/{branch}", "")
     try:
         state = read_repository_state(repository)
+        require_expected_state(state, expected_branch, expected_head)
         validate_remote(repository, remote)
         validate_branch(repository, branch)
         addresses = run_git(repository, ["remote", "get-url", "--push", "--all", remote]).stdout.splitlines()
@@ -677,7 +739,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="Check development state, safely update, or verify an existing push target."
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
-    for command in ("check", "update", "verify-push"):
+    for command in ("inspect", "check", "update", "verify-push"):
         command_parser = subparsers.add_parser(command)
         command_parser.add_argument(
             "--repo",
@@ -685,31 +747,52 @@ def build_parser() -> argparse.ArgumentParser:
             help="Git worktree path; defaults to the current directory",
         )
         command_parser.add_argument(
-            "--remote",
-            required=command == "verify-push",
-            help="Explicit remote name; must be used with --branch",
+            "--expect-branch",
+            help="Expected local branch for this action; mismatch stops before remote access",
         )
         command_parser.add_argument(
-            "--branch",
-            required=command == "verify-push",
-            help="Explicit remote branch; must be used with --remote",
+            "--expect-head",
+            help="Expected full local HEAD SHA for this action",
         )
+        if command != "inspect":
+            command_parser.add_argument(
+                "--remote",
+                required=command == "verify-push",
+                help="Explicit remote name; must be used with --branch",
+            )
+            command_parser.add_argument(
+                "--branch",
+                required=command == "verify-push",
+                help="Explicit remote branch; must be used with --remote",
+            )
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     arguments = parser.parse_args(argv)
+    if arguments.command == "inspect":
+        try:
+            return inspect_repository(
+                find_repository(arguments.repo), arguments.expect_branch, arguments.expect_head
+            )
+        except (InputError, GitError) as error:
+            emit_status("ERROR", None, None, detail=str(error))
+            return EXIT_ERROR
     if (arguments.remote is None) != (arguments.branch is None):
         parser.error("--remote and --branch must be provided together")
 
     try:
         repository = find_repository(arguments.repo)
+        expectations = {
+            "expected_branch": arguments.expect_branch,
+            "expected_head": arguments.expect_head,
+        }
         if arguments.command == "check":
-            return check_repository(repository, arguments.remote, arguments.branch)
+            return check_repository(repository, arguments.remote, arguments.branch, **expectations)
         if arguments.command == "verify-push":
-            return verify_push(repository, arguments.remote, arguments.branch)
-        return update_repository(repository, arguments.remote, arguments.branch)
+            return verify_push(repository, arguments.remote, arguments.branch, **expectations)
+        return update_repository(repository, arguments.remote, arguments.branch, **expectations)
     except (InputError, GitError) as error:
         state = diagnostic_state(repository) if "repository" in locals() else None
         target = None
