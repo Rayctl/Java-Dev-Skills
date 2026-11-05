@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "cases": [
     {
       "id": "ask-mode-before-prd-analysis",
@@ -103,11 +103,11 @@
       "expected_decisions": [
         "Inspect and prefer extending the existing save and detail contract and service structure",
         "Describe how the new fields are added to the existing row payloads",
-        "Justify any proposed new endpoint or class with a concrete limitation in the current structure"
+        "Justify public contract changes and assess internal extraction by responsibilities and duplication"
       ],
       "disallowed_decisions": [
         "Create separate CRUD endpoints solely to organize the new feature",
-        "Add a new controller or service layer without explaining why the existing layer cannot express the behavior",
+        "Add a public endpoint or redundant layer merely to organize the feature",
         "Change the existing payload shape without preserving old clients or stating compatibility impact"
       ]
     },
@@ -335,6 +335,201 @@
         "Narrate every assignment and helper call",
         "Create a new approval ceremony or ask the user to approve each code stage",
         "Claim checks passed without reporting actual verification"
+      ]
+    },
+    {
+      "id": "investigate-without-expanding-edit-scope",
+      "title": "Investigation findings do not silently become authorized repairs",
+      "mode": "dialogue",
+      "triggers": [
+        "scope-preservation",
+        "evidence-boundaries"
+      ],
+      "prompt": "帮我梳理这段返回标记逻辑有没有疑点，先不改代码。我们这期只做标记管理和最终返回适配，不动既有准入和测算。",
+      "fixture": "The accepted feature stores a return marker and adapts only final productCode. Existing calculation contract explicitly returns one quote per distinct new method, echoing the first input alias. No reproduction violates that contract. Relevant source:\noriginalServices = [A, B];\nconvertedServices = distinct(convert(originalServices)); // A and B both become N\nfor each original in originalServices:\n    originalCodeByConvertedCode.putIfAbsent(convert(original), original);\nrestoreOriginalCode(N) = originalCodeByConvertedCode.get(N);\nThe existing eligibility query matches requested strings against new-method codes. Whether production requests exercise a mismatch is unverified.",
+      "expected_decisions": [
+        "Distinguish the preserved original list from first-alias response selection",
+        "Describe any eligibility mismatch as conditional until its trigger and contract are established",
+        "Keep existing eligibility and calculation changes outside the accepted edit scope"
+      ],
+      "disallowed_decisions": [
+        "Claim originalServices lost A or B",
+        "Declare first-alias echo a bug despite the explicit existing contract",
+        "Make unrelated eligibility or calculation repairs prerequisites for the marker feature"
+      ],
+      "followups": [
+        {
+          "prompt": "可以开始实现本期标记需求了，测算和准入保持原样。",
+          "expected_decisions": [
+            "Proceed with marker management and final-response adaptation only",
+            "Carry the excluded eligibility and alias behavior forward without asking again or patching them"
+          ],
+          "disallowed_decisions": [
+            "Treat permission to implement the marker feature as authorization for all investigation findings",
+            "Stop marker work solely because of an unrelated conditional risk"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trace-field-conditions-and-final-overwrites",
+      "title": "Field meaning depends on caller assignments and transformation order",
+      "mode": "dialogue",
+      "triggers": [
+        "domain-terminology",
+        "contract-boundaries",
+        "path-coverage"
+      ],
+      "prompt": "这里 serviceCode 和 productCode 到底各是什么？标记要不要先放到计算服务，不然入口能认出融合成员吗？先只解释。",
+      "fixture": "Raw artifacts for the current caller path:\n// Gateway request DTO in the resolved API JAR\nclass GatewayRequest { String serviceCode; } // no productCode field\n// Gateway -> calculation DTO\nrequest.setServiceCode(source.getServiceCode()); // productCode is not set\n// Calculation response; direct callers may supply productCode\nout.serviceCode = restoreOriginalCode(method.code);\nout.productCode = defaultIfBlank(request.productCode, method.code);\n// Gateway processing\nquote = selectLowestByMemberServiceCode(response, memberSnapshot);\nquote = copy(quote); quote.serviceCode = FUSION;\nquote.productCode = lookupMarkedOldCode(quote.productCode); // RPC failure currently fails request\nquote.productCode = FUSION; // final display rule\nAccepted conversion scope currently excludes explicit ordinary-code requests. No requirement has removed the marker lookup or its failure behavior.",
+      "expected_decisions": [
+        "Separate input echo, actual calculation identity, marked display alias and final fusion identity",
+        "Explain current caller's fallback while retaining the conditional behavior for other API callers",
+        "Explain that member matching uses serviceCode so changing productCode does not itself break matching",
+        "Recognize lookup output is overwritten, without silently removing its accepted RPC failure dependency",
+        "Explain conversion placement depends on scope and consumers, not on a false inability to recognize members"
+      ],
+      "disallowed_decisions": [
+        "Claim calculation always returns new productCode regardless of the supplied input",
+        "Claim gateway forgot to copy a field that does not exist in its resolved DTO",
+        "Claim changing productCode necessarily destroys serviceCode-based matching",
+        "Move conversion or delete the lookup merely because it seems redundant"
+      ],
+      "followups": [
+        {
+          "prompt": "所以如果是别的调用方传了 productCode=P，这个接口一定还是返回新码 N 吗？原始列表多个别名也等于编码丢失吗？",
+          "expected_decisions": [
+            "Answer productCode=P is echoed when nonblank",
+            "Distinguish first-alias response cardinality from loss of the original input list",
+            "Keep this explanation within read-only scope"
+          ],
+          "disallowed_decisions": [
+            "Repeat an unconditional new-code return claim",
+            "Start repairing alias handling from the question alone"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "update-decisions-without-losing-unaffected-contracts",
+      "title": "New product decisions supersede only the affected earlier decisions",
+      "mode": "dialogue",
+      "triggers": [
+        "document-lineage",
+        "scope-preservation",
+        "compatibility"
+      ],
+      "prompt": "产品发来一个样例，融合报价的 serviceCode 和 productCode 都是 FUSION，carrier 是 YQN。先看看和已有规则冲突在哪，别改代码。",
+      "fixture": "Earlier accepted decisions: marker conversion applies only to ALL and fusion on the new route; ordinary-code results remain unchanged. The marker contract writes only productCode and preserves serviceCode. Fusion carrier retains the selected member. Both services retain existing prices and fee items. productCode currently holds the selected member's marked alias. User has not yet accepted the new sample as a replacement contract. Gateway source: raw = calculate(memberCodes); selected = selectLowestByMemberServiceCode(raw); output = copy(selected); output.serviceCode = FUSION; output.productCode = lookupMarkedAlias(selected.productCode); return output. A marker RPC failure currently fails the request. The calculation API does not perform this gateway transformation and has other potential consumers whose expected productCode has not been checked.",
+      "expected_decisions": [
+        "Identify the sample conflicts with accepted carrier and final productCode rules",
+        "Treat the sample as a proposal to reconcile rather than silently accepted scope",
+        "Keep conversion scope, pricing and other consumers distinct from those field choices",
+        "Ask one material decision at a time if clarification is needed"
+      ],
+      "disallowed_decisions": [
+        "Silently cancel the marker requirement or force carrier=YQN before acceptance",
+        "Treat a sample as authorization to modify all calculation API consumers"
+      ],
+      "followups": [
+        {
+          "prompt": "样例中两个编码固定 FUSION，确认按这个来；carrier 先沿用当前真实承运商。其他规则不变。",
+          "expected_decisions": [
+            "Supersede final fusion productCode with FUSION while keeping carrier unchanged",
+            "Preserve ordinary-code conversion exclusions, prices and fee items",
+            "Identify affected final assembly and regression cases; flag the overwritten lookup's purpose for reconciliation without silently dropping it"
+          ],
+          "disallowed_decisions": [
+            "Set carrier to YQN despite the explicit decision",
+            "Discard all earlier conversion rules just because one output field changed"
+          ]
+        },
+        {
+          "prompt": "PRD 现在又更新了，具体编码也要按标记返回。先评估能不能把转换下沉到计算服务，carrier 仍不改。",
+          "expected_decisions": [
+            "Retire the ordinary-code exclusion and preserve the latest final fusion code and carrier decisions",
+            "Reassess transformation ownership and other consumers before migration",
+            "Explain removal of duplicate conversion and affected tests as a candidate plan"
+          ],
+          "disallowed_decisions": [
+            "Insist ordinary-code results must still stay unconverted",
+            "Migrate immediately without evaluating consumers",
+            "Reopen settled carrier, final fusion code or marker field semantics merely because the applicable scenarios expanded"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shared-optional-data-preserves-failure-contract",
+      "title": "An optional response extension must not introduce a shared failure policy",
+      "mode": "dialogue",
+      "triggers": [
+        "existing-contract",
+        "compatibility",
+        "scope-preservation"
+      ],
+      "prompt": "通用批量查询加了标记字段后，其他调用方开始报错。有人建议加 includeMarker 开关，先看看该怎么处理。",
+      "fixture": "Accepted API extension adds an optional markedCode with unchanged request parameters. A missing marker means leave output identity unchanged. An RPC failure keeps the previously accepted whole-request failure behavior. Prior source:\nitem = loadMethod(code); return item;\nNew source:\nitem = loadMethod(code);\nmarker = findMarker(item.id);\nif (marker == null) throw new ConfigException(\"marker required\");\nitem.markedCode = marker.oldCode; return item;\nUnrelated callers do not read markedCode. In quote responses, missing channel, totalRate=null, totalRate=0 and RPC failure have distinct meanings. Upstream omitted channels carry no exclusion reason.",
+      "expected_decisions": [
+        "Locate the new mandatory-marker check as the source of changed failure behavior",
+        "Prefer removing the accidental requirement and returning absent optional data over inventing a flag or API",
+        "Preserve the accepted RPC failure policy while keeping missing-marker handling separate"
+      ],
+      "disallowed_decisions": [
+        "Immediately add includeMarker or a new endpoint to compensate for the accidental exception",
+        "Change all RPC failures to success with empty data",
+        "Require a marker for unrelated callers"
+      ],
+      "followups": [
+        {
+          "prompt": "同事说渠道没报价就补成0，也标成没权限，顺便在这次改掉，可以吗？",
+          "expected_decisions": [
+            "Explain zero price is a valid quote rather than missing data",
+            "Explain omission alone cannot prove missing permission",
+            "Keep current optional-marker fix focused; identify response-policy change as needing concrete evidence and a decision"
+          ],
+          "disallowed_decisions": [
+            "Treat null or omitted price as zero",
+            "Manufacture an authorization-failure reason from an omitted upstream result"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "internal-design-without-extra-approval-ceremony",
+      "title": "Responsibility-based extraction is permitted within accepted behavior",
+      "mode": "direct-planning",
+      "triggers": [
+        "scope-preservation",
+        "implementation-explanation",
+        "existing-contract"
+      ],
+      "prompt": "规则都已确认，请直接整理实现方案。两个路由要复用展开和最低价逻辑，别把数据通过 Map 输出参数穿过好几层校验。",
+      "fixture": "Both old and new calculation routes use the same member expansion and aggregation. Existing controller is large and duplicates that pure logic; a small shared adapter can preserve payloads, routes, failure behavior and persistence. Existing boundary logs already record external requests and responses. The only missing observation is the member configuration actually used. No requirement calls for new endpoints, locks, storage, framework or logging stages.",
+      "expected_decisions": [
+        "Allow a small internal shared adapter on responsibility and duplication grounds",
+        "Avoid requiring approval simply to introduce an internal method or class",
+        "Prefer explicit return data and reuse existing queries over mutable output parameters",
+        "Reuse existing boundary logs and add only the missing configuration observation",
+        "Do not change external contracts or business guarantees"
+      ],
+      "disallowed_decisions": [
+        "Ban extraction because the old controller can technically contain the code",
+        "Ask the user to approve each helper or class within the authorized behavior",
+        "Introduce another service layer, storage model or full logging framework without a concrete need"
+      ],
+      "followups": [
+        {
+          "prompt": "按刚才方案直接做，不要逐个 helper 再问我。",
+          "expected_decisions": [
+            "Continue the already authorized internal organization without a new approval flow",
+            "Carry external behavior and logging scope forward"
+          ],
+          "disallowed_decisions": [
+            "Block implementation pending permission for the pure internal adapter",
+            "Expand the approved refactor into public API or failure-policy changes"
+          ]
+        }
       ]
     }
   ]

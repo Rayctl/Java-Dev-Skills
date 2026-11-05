@@ -10,7 +10,7 @@
 | [java-backend-code-quality](java-backend-code-quality/README.md) | 在 Java 后端编码、修改和变更检查阶段应用契约、命名、注释、异常及复杂逻辑质量规则 |
 | [prd-business-understanding](prd-business-understanding/README.md) | 在 PRD 驱动的规划和实现中梳理旧行为、变化、兼容要求及关键决策依据 |
 
-PRD 驱动的规划或实现任务使用 prd-business-understanding，并按用户表达识别梳理或规划模式。先核对现状、契约和受影响路径，再区分事实、已确认需求、方案和未决决策；默认保留现有业务行为与契约，额外限制或更强技术保证先确认。优先沿用现有接口和结构，完成时映射场景、改动位置和验证结果。非 PRD 任务不触发该流程。
+PRD 驱动的规划或实现任务使用 prd-business-understanding，并按用户表达识别梳理或规划模式。先核对现状、契约和字段流转，区分事实、需求、方案和未决决策；排查疑点不自动扩大修改范围，需求更新只替换受影响决定。保留公共接口的兼容与失败行为，按职责整理内部实现，无须逐个审批方法或类。完成时映射场景、改动位置和验证结果；非 PRD 任务不触发该流程。
 
 ## 推荐流程
 
