@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import importlib.util
 import io
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -14,7 +13,6 @@ from unittest import mock
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = SKILL_ROOT / "scripts" / "git_safe_collaboration.py"
-LEGACY_SCRIPT_PATH = SKILL_ROOT.parent / "git-latest-code-check" / "scripts" / "git_latest_code.py"
 SPEC = importlib.util.spec_from_file_location("git_safe_collaboration", SCRIPT_PATH)
 assert SPEC is not None and SPEC.loader is not None
 git_safe_collaboration = importlib.util.module_from_spec(SPEC)
@@ -85,60 +83,6 @@ class GitSafeCollaborationTests(unittest.TestCase):
         environment = run.call_args.kwargs["env"]
         self.assertEqual("0", environment["GIT_OPTIONAL_LOCKS"])
         self.assertEqual("1", environment["GIT_NO_LAZY_FETCH"])
-
-    @unittest.skipUnless(LEGACY_SCRIPT_PATH.is_file(), "legacy CLI package not installed")
-    def test_legacy_cli_forwards_arguments_output_and_exit_codes_readonly(self) -> None:
-        scenarios = (
-            ("inspect", ("--expect-branch", "main")),
-            ("inspect", ("--expect-branch", "wrong-branch")),
-            ("check", ()),
-            ("verify-push", ("--remote", "origin", "--branch", "main")),
-            ("check", ("--remote", "origin", "--branch", "missing")),
-            ("inspect", ("--expect-head", "invalid")),
-        )
-        for command, args in scenarios:
-            with self.subTest(command=command, args=args):
-                before = self.readonly_snapshot()
-                canonical = self.run_tool(command, None, *args)
-                legacy = subprocess.run(
-                    [sys.executable, str(LEGACY_SCRIPT_PATH), command,
-                     "--repo", str(self.worktree), *args],
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-                    encoding="utf-8", errors="replace", check=False,
-                )
-                self.assertEqual(canonical.returncode, legacy.returncode, legacy.stderr)
-                self.assertEqual(canonical.stdout, legacy.stdout)
-                self.assertEqual(canonical.stderr, legacy.stderr)
-                self.assertEqual(before, self.readonly_snapshot())
-
-    @unittest.skipUnless(LEGACY_SCRIPT_PATH.is_file(), "legacy CLI package not installed")
-    def test_legacy_cli_requires_canonical_installation(self) -> None:
-        legacy_dir = self.root / "legacy without canonical" / "scripts"
-        legacy_dir.mkdir(parents=True)
-        shim = legacy_dir / "git_latest_code.py"
-        shutil.copy2(LEGACY_SCRIPT_PATH, shim)
-        result = subprocess.run(
-            [sys.executable, str(shim), "inspect", "--repo", str(self.worktree)],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-            encoding="utf-8", errors="replace", check=False,
-        )
-        self.assertEqual(2, result.returncode)
-        self.assertIn("STATUS ERROR", result.stdout)
-        self.assertIn("install the adjacent git-safe-collaboration", result.stdout)
-
-    @unittest.skipUnless(LEGACY_SCRIPT_PATH.is_file(), "legacy CLI package not installed")
-    def test_renamed_entrypoints_forward_update_to_same_implementation(self) -> None:
-        expected_sha = self.publish_change("legacy forwarded update\n")
-        before = self.git(self.worktree, "rev-parse", "HEAD").stdout.strip()
-        result = subprocess.run(
-            [sys.executable, str(LEGACY_SCRIPT_PATH), "update", "--repo", str(self.worktree),
-             "--expect-branch", "main", "--expect-head", before],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-            encoding="utf-8", errors="replace", check=False,
-        )
-        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
-        self.assertIn("STATUS UPDATED", result.stdout)
-        self.assertEqual(expected_sha, self.git(self.worktree, "rev-parse", "HEAD").stdout.strip())
 
     def test_run_git_preserves_lazy_fetch_policy_for_approved_write(self) -> None:
         completed = mock.Mock(returncode=0, stdout="", stderr="")

@@ -2,7 +2,7 @@
 
 正式标识与安装目录统一为 `git-safe-collaboration`，调用 `$git-safe-collaboration`。能力从“检查最新代码”扩展为 Git 安全协作；不是通用命令大全，也不接管 PRD 或业务设计。
 
-旧目录 `git-latest-code-check` 仅作为过渡 CLI 的可选安装位置。旧 CLI 路径保留薄转发，不提供第二套 Skill 或旧 Python 模块导入接口；历史会话应改读新目录的 SKILL.md。已存在的聊天工作目录名称和对应信任设置不属于 Skill 标识，不需重命名。
+统一使用本目录的 SKILL.md 与 `scripts/git_safe_collaboration.py`。已存在的聊天工作目录名称和对应信任设置不属于 Skill 标识，不需重命名。
 
 ## 工作流
 
@@ -76,7 +76,7 @@ update 的 UPDATED 表示快进及复查成功。DIRTY、FETCH_BLOCKED、UPDATE_
 
 Apply this section for substantive code planning, creation or modification, or an explicit Git operation (commit, transfer, integrate, recovery, push, or branch management). If the chat has no associated repository and the user gave no repository path, silently skip: no Git commands or Skill invocation. Identify a candidate only from the current directory or an explicitly provided repository path; confirm with git -C "<candidate>" rev-parse --is-inside-work-tree. Do not search unrelated directories. Failed/non-worktree candidates silently skip.
 
-For a confirmed worktree, explicitly read C:\Users\27445\.codex\skills\git-safe-collaboration\SKILL.md once as $git-safe-collaboration (compatibility identifier; Git Safe Collaboration). Load only the reference matching the action. For ordinary code work, follow development.md and load language/task Skills only after readiness passes or related dirty work is explicitly permitted. For an explicitly requested Git diagnosis/recovery/integration, use that scoped workflow rather than treating the ordinary development gate as a ban on resolving the requested operation. Language rules still apply to any source edits.
+For a confirmed worktree, explicitly read C:\Users\27445\.codex\skills\git-safe-collaboration\SKILL.md once as $git-safe-collaboration (Git Safe Collaboration). Load only the reference matching the action. For ordinary code work, follow development.md and load language/task Skills only after readiness passes or related dirty work is explicitly permitted. For an explicitly requested Git diagnosis/recovery/integration, use that scoped workflow rather than treating the ordinary development gate as a ban on resolving the requested operation. Language rules still apply to any source edits.
 
 Keep the confirmed development branch distinct from the current checkout, existing remote comparison target, integration source/destination, and push destination. Before an edit batch or Git mutation, locally verify the expected branch/HEAD for that action; CURRENT alone does not establish the correct task branch. Integration completion does not redefine the next development target. Reuse remote observations across continuous follow-ups only under the Skill's invalidation rules; verify every actual push separately.
 
@@ -95,5 +95,3 @@ py -3 "<skill-creator>/scripts/quick_validate.py" "./git-safe-collaboration"
 ```
 
 同时校验安装版、编译 Python 到临时目录、解析 YAML/场景 JSON、检查引用存在、执行 git diff --check 并比对受控文件哈希。真实 Git 回归覆盖预期分支/HEAD、只读不变、作者来源保留、同树异史合并冲突；[行为场景](evals/README.md) 单独评估模型选择，不能用格式校验或脚本单测冒充模型行为通过。
-
-正式 Skill 可独立安装；过渡期如需兼容旧 CLI，额外安装相邻旧目录的 README.md 与 scripts/git_latest_code.py，且旧目录不能含 SKILL.md 或 agents 元数据。测试在缺少可选兼容目录时只跳过对应兼容用例，正式功能回归照常运行。
