@@ -1,6 +1,6 @@
 # Comments And JavaDoc
 
-Read this reference when changed code adds or changes a class, method, JavaDoc, comment, guard cluster, or non-trivial method body. Skip it for changes limited to imports, annotations, constants, or generated and inherited declarations with no new semantics.
+Read for Java class, method, JavaDoc, comment, guard-cluster, or non-trivial-body edits, and requested assessment of existing documentation or stage coverage. During planning, load it for proposed independent actions or hidden stage contracts that need documentation; identify those needs without reporting absent comments in unwritten code. Skip imports, annotations, constants, or generated and inherited declarations with no relevant semantics. Read-only modes assess coverage without adding comments.
 
 ## Separate Current Meaning From Local Style
 

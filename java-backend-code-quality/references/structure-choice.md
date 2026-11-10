@@ -1,6 +1,6 @@
-# Structure Choice Before Coding
+# Structure Choice
 
-Read this reference only in implementation mode when current production code or shared test infrastructure shows one of the variation signals routed from `SKILL.md`. This is an advisory before editing, not a review rule or a source of `P2` or `P3` findings.
+Read during planning or implementation when current production code, proposed behavior, or shared test infrastructure shows a variation signal routed from `SKILL.md`; also read for an explicitly requested structural optimization analysis with that signal. This is an advisory, not a review rule or a source of `P2` or `P3` findings. Ordinary unit tests, mocks, and test data do not trigger it.
 
 ## Evaluate Current Variation
 
@@ -37,7 +37,7 @@ Do not add empty interfaces, pass-through classes, behavior-free hierarchies, sh
 
 ## Present A Material Suggestion
 
-Stay silent and continue when the simple structure is sufficient. When a new interface, class set, or flow reorganization would materially improve the current task, explain before editing:
+During planning or implementation, stay silent and continue when the simple structure is sufficient. In an explicit optimization analysis, explain why retaining it is reasonable. When a new interface, class set, or flow reorganization would materially improve the current task, compare:
 
 1. the concrete repeated decision or varying behavior in the current code
 2. the simplest direct implementation
@@ -45,6 +45,6 @@ Stay silent and continue when the simple structure is sufficient. When a new int
 4. the added maintenance cost and the benefit over the direct option
 5. the recommended option and why
 
-Then pause for the user's choice. An explicit user request or repository rule selecting the structure removes the need to ask again. If the user declines, implement the simplest correct option and do not report the choice as a quality problem.
+Before implementing a material structural change, pause for the user's choice. An explicit user request or repository rule selecting the structure removes the need to ask again. A read-only plan or analysis can finish the requested comparison and identify an open choice without requiring approval to present it. If the user declines, implement the simplest correct option when coding is authorized and do not report the choice as a quality problem.
 
 Do not run this advisory during review-only work. Existing correctness, ownership, naming, method-design, and lifecycle rules still apply independently when they reveal a concrete defect or maintenance risk.

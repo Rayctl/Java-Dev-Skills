@@ -188,6 +188,31 @@ class SemanticEvaluationValidationTests(unittest.TestCase):
         self.assertEqual(1, code)
         self.assertEqual("invalid_mode", result["reason"])
 
+    def test_each_supported_mode_accepts_a_scoped_case(self):
+        for mode in ("planning", "analysis", "implementation", "review"):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
+                payload = self.valid_payload()
+                payload["cases"][0]["mode"] = mode
+                payload["cases"][0]["triggers"] = ["task-modes"]
+                path = self.write_payload(temporary, payload)
+
+                code, result = self.run_main(path)
+
+                self.assertEqual(0, code)
+                self.assertEqual({"status": "VALID", "case_count": 1}, result)
+
+    def test_unknown_mode_is_invalid(self):
+        payload = self.valid_payload()
+        payload["cases"][0]["mode"] = "automatic-rewrite"
+        with tempfile.TemporaryDirectory() as temporary:
+            path = self.write_payload(temporary, payload)
+
+            code, result = self.run_main(path)
+
+        self.assertEqual(1, code)
+        self.assertEqual("invalid_mode", result["reason"])
+        self.assertEqual(1, result["case_index"])
+
     def test_invalid_json_is_reported_without_traceback(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "cases.json"

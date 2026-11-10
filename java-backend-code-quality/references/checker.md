@@ -16,7 +16,9 @@ py -3 "<skill-directory>\scripts\check_java_backend_style.py" [--exclude <path>]
 
 `--line-range` checks only the supplied changed lines and cannot be combined with `--exclude`. Method-level findings are reported when the selected range intersects the containing method. Exclusions win over inclusion, may name absent files, do not accept globs, and must resolve inside the selected repository where applicable.
 
-The checker is read-only. It must not infer authorship by scanning the whole project or report unrelated historical, generated, or vendored code. Read surrounding code only as context. If Git cannot establish a safe change surface, require an explicit baseline instead of guessing.
+The checker is read-only. It must not infer authorship by scanning the whole project or report unrelated historical, generated, or vendored code. An explicitly requested unchanged file or method can be assessed with explicit paths or ranges; it is not excluded merely because `--changed` finds nothing. If the intended change surface cannot be established, request a baseline or explicit target instead of guessing.
+
+Planning, analysis, and review do not require a checker run merely because the Skill loaded. Run it only when deterministic style evidence is relevant to the selected target; do not use `--changed` to claim an unchanged target passed. Plans describe future checks, and tests against current code cannot validate an unwritten implementation. Semantic judgments and mode selection remain outside the checker's rules.
 
 Changed-mode diffs use `--text`, with external diff and text conversion disabled, so a binary Git attribute cannot silently hide Java text changes. Unexpected non-text diff output is an input error, not a clean result. Brace findings carry evidence from the control header through its corresponding statement body, allowing body-only edits and brace deletions to intersect the selected scope without scanning unrelated statements as new findings.
 

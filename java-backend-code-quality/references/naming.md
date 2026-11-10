@@ -1,6 +1,6 @@
 # Java Naming Reference
 
-Read this reference when an added or changed name uses generic or unfamiliar vocabulary, an enum lookup is added or changed, a rename is under review, or a caller cannot understand the complete responsibility from the call site. Do not load it merely because a change introduces otherwise clear identifiers.
+Read when a name in scoped code or a proposed implementation uses generic or unfamiliar vocabulary, an enum lookup or rename is under assessment, or a caller cannot understand the complete responsibility from the call site. Existing names can be assessed without a diff; do not rename them during read-only work. Otherwise clear identifiers do not by themselves trigger this reference.
 
 ## Call-Site Test
 

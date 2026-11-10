@@ -1,6 +1,6 @@
 # Contracts And Lifecycles
 
-Read this reference when changed code coordinates multiple stages, correlated results, representation changes, side effects, resources, transactions, async work, retries, caches, compensation, concurrency-sensitive writes, or non-obvious failure policies. For remote calls, load it only when those concerns apply; remote logging and downstream errors belong to [remote-calls.md](remote-calls.md). Skip trivial accessors, data holders, pure predicates, and mechanical edits without these concerns.
+Read when scoped code or proposed behavior coordinates multiple stages, correlated results, representation changes, side effects, resources, transactions, async work, retries, caches, compensation, concurrency-sensitive writes, or non-obvious failure policies. In planning, distinguish proposed ownership and paths from existing guarantees. For remote calls, load it only when those concerns apply; remote logging and downstream errors belong to [remote-calls.md](remote-calls.md). Skip trivial accessors, data holders, pure predicates, and mechanical edits without these concerns.
 
 ## Reconstruct The Behavior
 

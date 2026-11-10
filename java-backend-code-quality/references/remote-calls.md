@@ -1,6 +1,6 @@
 # Remote Calls
 
-Read this reference when changed Java code adds or changes an HTTP, Feign, RPC, or external SDK call; its request or response logging; downstream error parsing or mapping; or the caller-visible failure produced by that call. Apply repository instructions and explicit user choices first. Do not infer permission to record or disclose data merely because a client library can do so.
+Read when scoped code or proposed behavior involves an HTTP, Feign, RPC, or external SDK call, its logging, downstream error parsing or mapping, or caller-visible failure. Planning and analysis inspect the relevant contract without invoking a live service. Apply repository instructions and explicit user choices first. A client library's capabilities do not grant permission to invoke services, record data, or disclose it.
 
 ## Establish The Local Contract
 

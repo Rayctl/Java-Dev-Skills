@@ -13,7 +13,7 @@ from typing import Any
 
 SCHEMA_VERSION = 1
 CASE_ID_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
-ALLOWED_MODES = {"implementation", "review"}
+ALLOWED_MODES = {"planning", "analysis", "implementation", "review"}
 KNOWN_TRIGGERS = {
     "checker",
     "comments-and-javadoc",
@@ -26,6 +26,7 @@ KNOWN_TRIGGERS = {
     "project-guidance",
     "remote-calls",
     "structure-choice",
+    "task-modes",
 }
 REQUIRED_CASE_FIELDS = {
     "id",

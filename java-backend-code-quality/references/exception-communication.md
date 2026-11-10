@@ -1,6 +1,6 @@
 # Exception Communication
 
-Read this reference when changed Java code throws or converts an exception, returns an error response, writes a failure log, documents a failure contract, or changes a `catch` or `finally` path. Apply repository-specific exception types, error catalogs, localization, logging ownership, and privacy rules first.
+Read when scoped code or proposed behavior throws or converts an exception, returns an error response, writes a failure log, documents a failure contract, or involves a `catch` or `finally` path. This includes requested analysis of existing failure behavior. Apply repository-specific exception types, error catalogs, localization, logging ownership, and privacy rules first; recommendations do not authorize edits.
 
 ## Separate The Audiences
 

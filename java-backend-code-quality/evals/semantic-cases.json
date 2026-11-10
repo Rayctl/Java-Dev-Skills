@@ -1921,6 +1921,128 @@
       "fixture": "A shared validator is called for inbound source data and generated outbound requests. This changed call validates the destination request before sending, and the caller knows the destination operation and field path. The current message says BUSINESS required field missing: customer.id. Failure can result from absent source input, missing transformation configuration or a transformation returning null; this boundary cannot distinguish those causes. No downstream request has been sent and no error-code change is authorized.",
       "expected_decisions": ["Use the established caller-facing operation, destination-request context and safe field path to identify the observed missing required value", "Supply direction from the actual caller or owning boundary rather than guessing it in the generic validator", "Avoid asserting a unique source/configuration cause or suggesting an unsupported fix", "Preserve code, validation order and the distinction from a downstream rejection"],
       "disallowed_decisions": ["Keep only the internal BUSINESS role as location context", "Claim the provider rejected the request", "Say configuration must be wrong when source absence is also possible", "Refactor validation logic during a wording-only task"]
+    },
+    {
+      "id": "planning-checks-contract-before-proposing-flow",
+      "title": "A plan examines failure and ownership before choosing an implementation",
+      "mode": "planning",
+      "triggers": ["task-modes", "contracts-and-lifecycles", "remote-calls", "evidence-and-verification"],
+      "prompt": "先规划保存订单后通知合作方的实现方案，不要改代码",
+      "fixture": "OrderService.save persists inside a local transaction. PartnerClient.notify is HTTP with no documented idempotency guarantee. A confirmed requirement says a notification failure must not undo the saved order, and clients may retry. Existing project documentation supplies the HTTP logging and error policy. No requirement selects a new queue, compensation framework, or notification retry policy.",
+      "expected_decisions": ["Inspect transaction completion, current caller behavior and the remote contract before proposing the notification boundary", "Preserve the confirmed save-on-notification-failure requirement instead of treating current code as immutable", "Distinguish a timeout from proof of remote non-execution and surface the unresolved retry/idempotency decision", "Describe proposed focused verification as future work and keep the task read-only"],
+      "disallowed_decisions": ["Put the HTTP call inside the local transaction and claim atomicity across systems", "Invent a retry policy or queue as an approved requirement", "Claim current tests validate an unwritten implementation", "Edit source while planning"],
+      "assertions": ["The plan locates the persistence/notification ownership boundary", "The response separates confirmed requirements from an open retry decision", "No business files or project hints are created"]
+    },
+    {
+      "id": "analysis-unchanged-target-is-in-scope",
+      "title": "A named existing method is analyzable without a diff",
+      "mode": "analysis",
+      "triggers": ["task-modes", "evidence-and-verification", "contracts-and-lifecycles"],
+      "prompt": "梳理 InvoiceService.calculateTotal，有没有值得优化的地方？先别改",
+      "fixture": "The repository has no Java diff. calculateTotal loops over invoice lines and adds line.getAmount(), then returns the total. The schema permits a null amount and a current caller supplies it; the accepted contract requires a missing amount to produce a field-specific validation failure. Neighboring unrelated methods also contain old style issues.",
+      "expected_decisions": ["Read the named method, relevant caller and accepted absence contract even though no files changed", "Identify the reachable null failure against the required validation behavior with supporting evidence", "Separate the evidenced problem from optional layout improvements", "Keep unrelated historical methods and edits out of scope"],
+      "disallowed_decisions": ["Refuse analysis because --changed is empty", "Report all neighboring historical style issues", "Automatically repair source", "Treat an empty changed-file checker result as validation of the target"],
+      "assertions": ["The output cites the actual null path and caller contract", "The worktree remains unchanged"]
+    },
+    {
+      "id": "analysis-short-helper-compares-real-call-sites",
+      "title": "Read-only helper assessment applies call-site readability rules",
+      "mode": "analysis",
+      "triggers": ["task-modes", "method-design"],
+      "prompt": "这个私有方法有没有必要保留？给我建议，不要修改",
+      "fixture": "Three selected call sites call isCatalogField(field). Its unchanged body is return field != null && Catalog.isReference(field.getCode(), field.getPath());. The compact expression exposes the null behavior and both source fields at each call site. It has no framework identity, independent algorithm, lifecycle owner or dynamic failure policy.",
+      "expected_decisions": ["Compare the complete helper expression at the actual selected call sites", "Recommend writing the compact expression at use sites when it reduces navigation and preserves null semantics", "Treat reuse count as duplication cost rather than sufficient justification", "Present the recommendation without applying it"],
+      "disallowed_decisions": ["Exclude the unchanged helper from the requested analysis", "Retain solely because there are three callers", "Rewrite the call sites without authorization"]
+    },
+    {
+      "id": "analysis-valid-direct-design-can-remain",
+      "title": "Optimization analysis can recommend retaining one clear selection point",
+      "mode": "analysis",
+      "triggers": ["task-modes", "structure-choice"],
+      "prompt": "现在两个实现，要不要加策略模式？只分析",
+      "fixture": "One method selects either of two established validators with one clear if/else. Both have the same contract; no other location repeats the selection, no changing sequence is shared, and no additional implementation is required. There is no current correctness or ownership problem.",
+      "expected_decisions": ["Compare the clear direct selection with a new strategy structure and its interface/registration cost", "Recommend keeping the existing owner when the new structure has no concrete benefit", "Finish the requested comparison without an approval pause or code edits"],
+      "disallowed_decisions": ["Require a strategy merely because a second implementation exists", "Assign P2 or P3 solely because a pattern could replace a valid branch", "Stop before providing analysis to request permission for the comparison"]
+    },
+    {
+      "id": "analysis-explanation-does-not-become-refactoring",
+      "title": "A behavior explanation does not turn into an unsolicited optimization campaign",
+      "mode": "analysis",
+      "triggers": ["task-modes", "evidence-and-verification"],
+      "prompt": "这个状态为什么先校验再更新？帮我理解，不用改",
+      "fixture": "The named service validates a transition, performs a conditional state update, and returns a conflict if the prior version changed. Its caller and tests establish that validation gives a business-specific rejection while the conditional write prevents a concurrent stale update. No design defect or code change is requested.",
+      "expected_decisions": ["Explain the different business-validation and concurrency-write roles using caller and test evidence", "Distinguish observed behavior from the business rationale supported by the contract", "Keep the result focused on understanding with no mandatory redesign or full test run"],
+      "disallowed_decisions": ["Delete one check because both appear to validate state", "Invent a product requirement beyond the evidence", "Modify code or load all unrelated quality references"]
+    },
+    {
+      "id": "planning-unwritten-code-has-no-comment-defect",
+      "title": "Planning identifies documentation needs rather than grading nonexistent comments",
+      "mode": "planning",
+      "triggers": ["task-modes", "comments-and-javadoc"],
+      "prompt": "先规划一个分两阶段校验并构造请求的方法，暂时别写代码",
+      "fixture": "The approved design must validate all inputs before constructing a request because construction consumes a one-use sequence value. No method body has been written. Existing source and documentation establish the sequence side effect; no test has run for the new flow.",
+      "expected_decisions": ["Keep the approved validation-before-construction order visible in the plan", "Identify the future method contract and local stage explanation needed for the hidden sequence constraint", "Describe tests as proposed checks without claiming completion"],
+      "disallowed_decisions": ["Report STYLE-INTENT-001 or missing JavaDoc on unwritten code", "Write placeholder methods solely to run the checker", "Claim the planned ordering was tested"]
+    },
+    {
+      "id": "planning-simple-task-loads-only-relevant-rules",
+      "title": "A local naming plan stays proportionate",
+      "mode": "planning",
+      "triggers": ["task-modes", "naming"],
+      "prompt": "规划一下把这个转换器的 convert 命名说清楚，先不要改",
+      "fixture": "A pure local converter returns OrderResponse from OrderRecord and has one relevant caller. Both types and the caller make the target shape clear. The method has no I/O, state, lifecycle, error-policy or documentation change, and the task only requests a naming plan.",
+      "expected_decisions": ["Inspect the receiver, conversion result and caller before suggesting a concrete target name such as convertToOrderResponse", "Keep the plan brief and scope limited to the selected method and its caller", "Avoid unrelated exception, remote-call, lifecycle and project-hint initialization work"],
+      "disallowed_decisions": ["Load every reference because this is planning", "Audit the entire module", "Create project-guidance.md or rename code during the plan"]
+    },
+    {
+      "id": "review-diff-retains-selected-scope",
+      "title": "Expanded analysis support does not expand an ordinary diff review",
+      "mode": "review",
+      "triggers": ["task-modes", "control-flow"],
+      "prompt": "只审查本次 diff 的分支改动，别改代码",
+      "fixture": "The selected diff changes one braced branch in QuoteService. An untouched helper elsewhere has a dense ternary but is neither used nor affected by the changed path. The reviewed branch preserves the established null and failure behavior. There is another equally valid layout.",
+      "expected_decisions": ["Check the selected changed branch and relevant context without auditing the unrelated helper", "Report no finding solely for another valid layout", "Keep review read-only and avoid unsolicited design-pattern selection"],
+      "disallowed_decisions": ["Use analysis-mode scope to report unrelated historical issues", "Automatically reformat the branch", "Require a full test suite merely because the Skill is active"]
+    },
+    {
+      "id": "analysis-existing-project-hints-read-without-refresh",
+      "title": "Analysis may use existing relevant hints but cannot mark them current",
+      "mode": "analysis",
+      "triggers": ["task-modes", "project-guidance", "evidence-and-verification"],
+      "prompt": "帮我梳理这条日志能不能定位覆盖前后的地址，不要改代码",
+      "fixture": "The repository has a project-guidance Logging section pointing to its unified logger. Current code records the same mutable address object as before and after, and a caller mutates it before deferred serialization. The hint metadata is valid but a logging configuration change after its section SHA requires targeted checking. No refresh or code edit is authorized.",
+      "expected_decisions": ["Read only metadata, headings and Logging hints, then check the relevant current logger and configuration", "Explain why a shared mutable reference is not a reliable before snapshot", "Keep evidence and hint metadata unchanged and state the targeted verification limits"],
+      "disallowed_decisions": ["Refresh the section SHA during analysis", "Load the full hint file and all references", "Treat metadata validation as proof of runtime snapshot behavior"]
+    },
+    {
+      "id": "planning-missing-hints-does-not-prompt-initialization",
+      "title": "Remote planning uses current evidence when optional hints are missing",
+      "mode": "planning",
+      "triggers": ["task-modes", "remote-calls", "project-guidance"],
+      "prompt": "根据现有 Wrapper 规划新增这个查询接口，先给方案",
+      "fixture": "The confirmed repository has no .codex/project-guidance.md. Its current Wrapper and formal API contract already define the logger entry point, read-only query semantics and error conversion. The proposed endpoint reuses those rules; no new logging scope or mapping decision is needed.",
+      "expected_decisions": ["Use the current Wrapper and formal contract to explain the proposed boundary", "Do not offer hint initialization in this read-only planning task", "List focused future contract checks without calling the live endpoint"],
+      "disallowed_decisions": ["Block planning until the user chooses whether to create project guidance", "Invent a local error mapping despite an existing contract", "Invoke the production provider to validate the plan"]
+    },
+    {
+      "id": "analysis-focused-proof-reports-current-code-limit",
+      "title": "A focused reproduction does not validate a proposed implementation",
+      "mode": "analysis",
+      "triggers": ["task-modes", "evidence-and-verification"],
+      "prompt": "这个转换是不是会丢失重复键？可以做只读验证，先不要修",
+      "fixture": "The selected current method inserts every input into a single-value map. Two input aliases can share the same key and the caller contract requires both to survive. An existing isolated unit test can be run without contacting services or changing source. The user has not authorized implementation of any replacement structure.",
+      "expected_decisions": ["Inspect cardinality and the caller contract and use the focused test or an isolated reproduction if helpful", "Report exactly which duplicate-key behavior was observed or remains inferred", "Present a replacement as a recommendation requiring later implementation and verification", "Do not run the entire suite or changed-file style checker merely to certify analysis"],
+      "disallowed_decisions": ["Claim a passing current-code test proves a proposed multimap solution", "Edit the real method to build a reproduction", "Treat an empty Java diff as evidence that the duplicate contract is correct"]
+    },
+    {
+      "id": "mode-transition-retains-authorized-decisions",
+      "title": "Entering implementation preserves the selected behavior and enables edit checks",
+      "mode": "implementation",
+      "triggers": ["task-modes", "method-design", "evidence-and-verification"],
+      "prompt": "按刚确认的直接展开方案改，空值语义保持不变",
+      "fixture": "The preceding read-only analysis compared a compact private null-check/delegation helper with its use sites. The user selected direct expressions in three task-owned call sites and authorized implementation. No current evidence invalidates the chosen semantics. An unrelated old helper is outside the agreed scope.",
+      "expected_decisions": ["Reuse the confirmed scope and behavior without requesting the same approval again", "Load applicable editing rules, preserve the null guard and field evaluation order, and keep unrelated helpers unchanged", "Reread changed methods and final diff and run the deterministic checker and appropriate verification after edits"],
+      "disallowed_decisions": ["Remain read-only despite explicit implementation authorization", "Discard the selected approach when the task mode changes", "Use read-only verification exemptions to skip post-edit checks", "Expand the task into all historical wrappers"]
     }
   ]
 }

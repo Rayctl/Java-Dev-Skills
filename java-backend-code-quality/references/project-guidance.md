@@ -1,6 +1,6 @@
 # Local Project Guidance
 
-Read this reference only for a Java implementation task that touches logging, dependencies or utilities, remote calls, exception handling, formatting, or build verification. The optional `.codex/project-guidance.md` file is a local reference for stable project hints. It reduces repeated discovery but never replaces current repository evidence.
+Read when a concrete Java task needs project-specific logging, dependency or utility, remote-call, exception, style, or build hints. Existing relevant sections may be read and checked in any mode; initialization and refresh offers remain implementation-only. The optional `.codex/project-guidance.md` file reduces repeated discovery but never replaces current repository evidence.
 
 ## Authority And Scope
 
@@ -27,10 +27,10 @@ In `Build And Verification`, distinguish the normal build or test entry point fr
 Look only for `<repository>/.codex/project-guidance.md`.
 
 - If it exists, read frontmatter and level-two headings first, then read only sections relevant to the task
-- A missing, empty, or unverified relevant section is not confirmed by the file's existence or another section's baseline. Perform targeted discovery for that area; if stable hints would help, ask once whether to add or refresh that section, unless the task already has the necessary approval. If declined, continue using current evidence without repeating the offer
+- A missing, empty, or unverified relevant section is not confirmed by the file's existence or another section's baseline. Perform targeted discovery for that area; during implementation, if stable hints would help, ask once whether to add or refresh that section, unless already approved. If declined, continue using current evidence without repeating the offer
 - If it is absent, ask once when the task touches one of the sections below and the user is implementing Java code. This also applies when the trigger appears after implementation has started: pause before editing the newly affected area and re-evaluate the relevant sections
 - If the user declines, continue with normal targeted discovery and do not ask again during the task
-- Do not ask in review mode, explanatory questions, ordinary local style changes, or tasks without a confirmed Git worktree
+- Do not offer initialization or refresh in planning, analysis, review, ordinary local style changes, or tasks without a confirmed Git worktree; use current evidence when hints are missing or stale
 - Never create or refresh the file without explicit approval
 
 Relevant sections are `Logging`, `Dependencies And Utilities`, `Remote Calls`, `Exception Handling`, `Formatting And Naming`, and `Build And Verification`. A simple rename, comment-only change, local branch adjustment, or ordinary CRUD change does not by itself require initialization.

@@ -1,6 +1,6 @@
 # Control Flow And Line Wrapping
 
-Read this reference when Java code adds or changes a ternary expression, branch, loop, structural count, index, or separator; when repeated decisions scatter a path; or when a chained call is being wrapped for readability.
+Read when scoped code or proposed behavior needs assessment of a ternary, branch, loop, structural count, index, separator, scattered repeated decision, or line wrapping. Analysis of an explicitly requested existing path does not require a diff; read-only tasks do not authorize restructuring it.
 
 ## Ternary Expressions
 
@@ -75,7 +75,7 @@ The enhanced-for source expression is evaluated once before traversal, not once 
 
 Keep the assignment at the original execution point and inside the same guard, transaction, lock, `try`, and resource scope. Preserve evaluation count, order, null and exception behavior, and lazy consumption. A named cursor, stream, or lazy iterable is not a materialized snapshot: do not collect it into a List, pre-read all pages, or move it out of its owned resource scope merely for this preference. Calls in `while` or classic-for conditions may intentionally fetch another page or observe changing state on each iteration; never hoist them as though they were an enhanced-for source
 
-Only added or changed task-owned traversal is in scope. A preference-only issue is `P3`, subordinate to formal repository rules; actual ordering, resource, or failure risks follow impact-based severity. Review the acquisition boundary during final control-flow readback even when the style checker passes
+Implementation and diff review cover added or changed task-owned traversal; explicit analysis or review of existing traversal includes the requested target. A preference-only issue is `P3`, subordinate to formal repository rules; actual ordering, resource, or failure risks follow impact-based severity. Review the acquisition boundary during final control-flow readback even when the style checker passes
 
 ## Final Control-Flow Review
 
@@ -97,7 +97,7 @@ if (request == null) {
 }
 ```
 
-The deterministic checker reports a missing body brace as `STYLE-BRACE-001`. It ignores comments, strings, text blocks, and unchanged historical code. Braces do not replace intent comments when a branch has a non-obvious business consequence.
+The deterministic checker reports a missing body brace as `STYLE-BRACE-001`. It ignores comments, strings, and text blocks; changed mode excludes unchanged historical code, while explicit paths or ranges assess the selected target. Braces do not replace intent comments when a branch has a non-obvious business consequence.
 
 ## Line Wrapping
 

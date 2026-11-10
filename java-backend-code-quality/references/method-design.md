@@ -1,6 +1,6 @@
 # Method Design And Small Abstractions
 
-Read this reference when changed code adds, edits, extracts, wraps, reuses, or calls an application-defined private helper; extracts compact logic or literals into a private field or constant; adds diagnostic scaffolding; introduces deferred execution; designs or changes parameters; adds or edits a nested class, local class, or nested enum; or raises an abstraction-granularity question. Do not load it for annotations, imports, independent contract constants, or already clear framework methods unless their changed use makes parameter meaning unclear.
+Read when the scoped code or proposed implementation involves private helpers, compact fields or constants, wrappers, diagnostic scaffolding, deferred execution, parameter design, nested types, or an abstraction-granularity question. An explicit analysis of an unchanged helper qualifies. Do not load it for annotations, imports, independent contract constants, or already clear framework methods without a relevant design concern. Apply editing instructions only when implementation is authorized.
 
 ## Compare With The Code At Its Use Sites
 
@@ -132,9 +132,9 @@ Ordinary tests and mocks do not trigger a type hierarchy rewrite; framework-requ
 
 ## Scope And Severity
 
-A helper is in scope when the current change creates or edits it or when a changed call site continues to use it. A field or constant is in scope only when the change creates or edits it as a compact reuse abstraction, or a changed use site relies on it in that role. Read unchanged declarations only as context and do not expand the review into unrelated historical abstractions.
+For implementation and diff review, a helper is in scope when the current change creates or edits it or a changed call site continues to use it. A compact reuse field or constant is in scope when created, edited, or relied on in that role by a changed use site. Other unchanged declarations supply context. Planning, analysis, and explicit review of existing abstractions also include the requested target even without a diff; recommendations do not authorize edits. Do not expand either scope into unrelated historical abstractions.
 
-For parameters, examine changed application-defined signatures and calls plus only the declarations needed to understand them. For nested types, examine only types added or edited by this task; using an unchanged nested type does not activate a historical nesting cleanup.
+For parameters, examine scoped application-defined signatures and calls plus declarations needed to understand them. For nested types, implementation and diff review cover types added or edited by the task; analysis or explicit existing-type review covers the requested target. Merely using an unchanged nested type does not activate a historical nesting cleanup.
 
 Report a needless extraction as `P2` when it conceals ordering, side effects, failure policy, lifecycle ownership, different failure causes, error categories, recovery actions, or information needed to judge correctness. Use `P3` when it only adds navigation and local reading cost.
 

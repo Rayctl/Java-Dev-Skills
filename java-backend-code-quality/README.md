@@ -1,10 +1,23 @@
 # Java Backend Code Quality
 
-用于编写、修改或检查 Java 后端代码。默认只检查当前任务改动的代码，并根据代码内容读取命名、代码结构、方法设计、注释、异常和生命周期等详细规则。
+用于规划、分析、编写和审查具体的 Java 后端代码。会在方案形成前、理解既有逻辑或评估优化点时应用对应规则，也在编码期间和完成后检查质量。根据任务读取命名、代码结构、方法设计、注释、异常和生命周期等详细规则。
+
+## 什么时候使用
+
+| 模式 | 请求示例 | 处理方式 |
+| --- | --- | --- |
+| 规划 | “这个需求应该怎么改？” | 确认相关现状，评估职责、契约、失败处理和复杂度，说明依据、方案取舍及待执行的验证 |
+| 分析 | “梳理这个方法”“这里有没有值得优化的地方？” | 追踪实际行为；需要优化评估时，区分已证实问题、待核实风险和可选改进 |
+| 实现 | “按这个方案修改” | 编辑前检查上下文，复杂逻辑逐阶段核对，完成后回读并验证 |
+| 审查 | “检查这次 diff”“审查这个类” | 只检查选定范围，按证据和实际影响报告问题 |
+
+规划、分析和审查默认只读，不因发现优化点就自动改代码。用户已经授权实现时，按原有决定继续，不重复询问。普通 Java 概念问答、无关文档工作不会启动仓库质量流程。
+
+明确点名的既有方法、类或有限模块，即使没有修改，也可以分析和审查。只评估有实际收益的优化，保留现状也可以是合理结论；另一种写法本身不是质量问题。简单任务不扫描整个模块，也不加载所有详细规则。具体边界见 [任务模式](references/task-modes.md)。
 
 ## 适用范围
 
-以下硬性质量门禁适用于本次变更中的 Java 生产代码和测试代码：
+以下硬性质量门禁适用于任务范围内的 Java 生产代码、测试代码及拟定行为。规划时评估相关设计风险，不将尚未编写的 JavaDoc、注释或测试报告成缺陷：
 
 - 保留当前任务未授权改变的空值、缺失、默认值、状态和异常行为；已确认的新行为同步调整调用方和测试，不把旧实现当成不可改变的规范
 - 方法和变量名称应让人在使用位置看懂具体对象、动作、状态和关键副作用
@@ -29,7 +42,9 @@
 
 偏好只在没有更高优先级依据时作为默认建议；单纯偏好问题最高报告为 `P3`，不能把通用偏好写成所有 Java 项目的正式规范。只有有证据的违规或实际理解、行为问题才分级；存在另一种合理写法，或用户希望进一步优化，本身不构成质量问题。例如位置字符串已经清楚时，可以讨论改为枚举，但不因此认定原写法有问题。
 
-检查范围默认限于当前任务的暂存、未暂存和未跟踪 Java 变更，也可以指定文件、行范围、提交或对比分支。不会报告未修改的历史代码、生成代码和第三方代码，但理解当前改动时可以读取它们。
+实现和 diff 审查默认限于当前任务的暂存、未暂存和未跟踪 Java 变更，也可以指定文件、行范围、提交或对比分支。规划、分析及明确指定既有代码的审查包括所选目标；周边代码用于理解相关行为，不自动扩大整改范围。不报告无关历史、生成代码和第三方代码。
+
+没有编辑 Java 源码时，不机械运行检查器或完整测试套件；只在能回答具体问题时做针对性验证。规划说明将如何验证，分析和审查说明实际查阅和执行了什么，以及尚未确认的部分，不能把旧代码的测试结果当成新方案已经正确。
 
 ## 按需读取详细规则
 
@@ -37,10 +52,11 @@
 
 | 详细规则文件 | 什么时候读取 |
 | --- | --- |
-| [project-guidance.md](references/project-guidance.md) | Java 编码任务开始或中途命中相关设施时，发现、初始化或核实本地项目提示；只读取与任务有关的章节 |
+| [task-modes.md](references/task-modes.md) | 规划、分析，或需要明确任务范围、只读边界及验证方式时 |
+| [project-guidance.md](references/project-guidance.md) | 需要项目设施提示时，只读取并核实已有相关章节；仅实现任务询问初始化或刷新 |
 | [method-design.md](references/method-design.md) | 短私有方法、复用常量或字段、方法拆分和包装、日志辅助结构、延迟执行、参数含义及新增或修改的嵌套类型 |
-| [structure-choice.md](references/structure-choice.md) | 编码时出现多个实现、不断增长的类型或状态分支、重复流程或分散的对象创建规则 |
-| [comments-and-javadoc.md](references/comments-and-javadoc.md) | 新增或修改类、方法、JavaDoc、注释、入口校验或包含多步处理的方法体 |
+| [structure-choice.md](references/structure-choice.md) | 规划、编码中存在真实变化点，或用户明确要求评估相关结构优化；纯审查不启动设计模式建议流程 |
+| [comments-and-javadoc.md](references/comments-and-javadoc.md) | 编辑类、方法、JavaDoc、注释和多步方法体，或分析说明覆盖；规划只识别独立动作和隐含契约的说明需求 |
 | [naming.md](references/naming.md) | 名称宽泛或用词生僻、集合和状态命名、枚举查询、`normalize`、使用位置看不出职责 |
 | [exception-communication.md](references/exception-communication.md) | 异常抛出或转换、用户可见文案及其常量、错误返回、失败日志、`catch` 或 `finally` |
 | [remote-calls.md](references/remote-calls.md) | HTTP、Feign、RPC、外部 SDK、请求响应日志、第三方错误解析或映射 |
@@ -53,7 +69,7 @@
 
 ## 本地项目提示
 
-Java 编码任务可以在仓库中使用本机专属的 `.codex/project-guidance.md`，记录稳定的项目提示，例如优先查看的日志入口、已有工具库、远程调用包装方式、常用验证命令和格式偏好。它不是项目正式规范，也不保存类清单、调用关系、依赖版本或字段含义等容易随代码变化的事实。
+各模式可以按需读取仓库中已有的本机专属 `.codex/project-guidance.md`，仅实现任务询问创建或刷新。它记录稳定提示，例如优先查看的日志入口、已有工具库、远程调用包装方式、常用验证命令和格式偏好；不是项目正式规范，也不保存类清单、调用关系、依赖版本或字段含义等容易随代码变化的事实。
 
 文件不存在时，只有任务涉及日志、依赖、远程调用、异常处理或构建验证，Skill 才会询问是否初始化；如果编码中途才新增这类改动，也必须在编辑该部分前重新触发检查。询问内容应同时确认要初始化哪些章节、记录哪些稳定提示，以及仓库是否已有脱敏或报文记录约定；脱敏不是默认强制项。单纯重命名、注释、局部判断和普通 CRUD 不会打扰用户。拒绝后本次任务继续正常检查且不再询问。创建前通过 `git rev-parse --git-path info/exclude`、`git check-ignore -v --no-index` 和 `git ls-files --error-unmatch` 确认路径确实是未跟踪的本地文件，不会修改仓库 `.gitignore`。
 
@@ -124,7 +140,7 @@ convert(source)              -> convertToApiUpdateBO(source)
 
 这些不是机械替换关系。`reconcileSchemaRevision` 只有实际职责就是修复修订号时，才适合改成 `repairSchemaRevision`；涉及双向比较和冲突处理时不能丢失这些含义。`serialize`、`rollback`、`commit`、项目通用业务词和框架签名可以保留。完成后从调用位置再读一遍，判断是否存在同样准确但更容易理解的说法；仅用词偏难最高按 `P3`，不使用词汇黑名单。
 
-### 编码前判断是否需要调整结构
+### 规划和编码前判断是否需要调整结构
 
 编码生产逻辑前，先看当前需求是否增加了新的实现方式，或者同一种类型、状态、协议和渠道判断是否已经散落在多个位置。这个步骤只是帮助选择结构，不是要求每次都使用设计模式。
 
@@ -136,7 +152,7 @@ convert(source)              -> convertToApiUpdateBO(source)
 
 只有当前代码已经存在变化点、调整后能减少重复修改位置，并且新增接口和类比原有分支更容易理解时，才向用户提出建议。没有明显收益时不输出结论，直接继续编码。只是沿用项目已有扩展点时也正常继续；需要新建接口、增加一组实现类或重组流程时，先说明简单方案与结构化方案的成本和收益，等待用户选择。用户拒绝后按简单方案实现，不记录质量问题。
 
-普通单元测试、Mock 和测试数据准备不执行这项判断；共享测试工具本身出现相同变化点时才检查。纯代码审查也不执行这项建议步骤。
+普通单元测试、Mock 和测试数据准备不执行这项判断；共享测试工具本身出现相同变化点时才检查。规划可以提前比较选项；用户明确要求结构优化分析时，也可以说明保留现状与调整方案各自的成本。只读比较无需为展示建议等待批准，真正实施重大结构调整前才需要已有授权或用户选择。纯代码审查不执行这项建议步骤，具体缺陷仍按实际影响检查。
 
 ### 短私有方法和复用常量
 
@@ -432,18 +448,18 @@ py -3 ".\java-backend-code-quality\scripts\verify_skill_installation.py" `
 
 ## 调用方式
 
-`agents/openai.yaml` 已允许隐式触发。为了在编码阶段稳定加载，可以在用户级 `~/.codex/AGENTS.md` 中加入：
+`agents/openai.yaml` 已允许隐式触发。为了在具体 Java 代码的规划、分析、实现和审查中稳定加载，可以在用户级 `~/.codex/AGENTS.md` 中加入：
 
 ```markdown
 ## Java Backend Code Quality
 
-Use `$java-backend-code-quality` whenever creating, modifying, or reviewing Java backend code. Apply common rules to every Java production or test source changed by the current task, and apply deeper contract and lifecycle checks only when the code contains non-trivial behavior. Ignore unrelated historical, generated, and vendored code. Explicit project and user instructions take precedence.
+Before planning, analyzing, implementing, or reviewing specific Java backend code or a proposed implementation, explicitly read and follow `$java-backend-code-quality` once for the task. Include explicitly requested existing code even without a diff; keep implementation and diff review scoped to task-owned changes. Planning, analysis, and review are read-only unless edits are authorized. Load references for the concerns under assessment, not the entire repository. After Java edits, reread changed methods and the final diff, run the deterministic checker, and perform appropriate verification. Without edits, use focused checks only when relevant and distinguish proposed verification from executed results. Generic Java questions do not trigger this workflow. Explicit project and user instructions take precedence.
 ```
 
 也可以显式调用：
 
 ```text
-Use $java-backend-code-quality to implement or review the Java backend code currently in scope
+Use $java-backend-code-quality to plan, analyze, implement, or review the Java backend code currently in scope
 ```
 
 ## 目录结构
@@ -469,7 +485,8 @@ java-backend-code-quality/
 |   |-- naming.md
 |   |-- project-guidance.md
 |   |-- remote-calls.md
-|   `-- structure-choice.md
+|   |-- structure-choice.md
+|   `-- task-modes.md
 |-- scripts/
 |   |-- check_java_backend_style.py
 |   |-- validate_semantic_evals.py

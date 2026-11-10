@@ -1,6 +1,6 @@
 # Evidence, Context, And Final Verification
 
-Read this reference before modifying existing behavior or data semantics, when changed business decisions need diagnostic evidence, when evidence is missing or conflicting, or when tools may change files after the initial edit. It governs semantic impact, business diagnostics, evidence authority, and final-state verification.
+Read when planning, analyzing, implementing, or reviewing existing behavior or data semantics, when business decisions need diagnostic evidence, when evidence is missing or conflicting, or when tools may change files after an edit. Investigate the requested semantic neighborhood in any mode; the implementation loop and final-state readback below apply when files are actually edited. See [task-modes.md](task-modes.md) for read-only output and verification boundaries.
 
 ## Incremental Implementation Loop
 
@@ -38,7 +38,7 @@ Derive meaningful expected results from the accepted contract and concrete examp
 
 ## Map The Semantic Neighborhood
 
-The symbol named in the request is an investigation starting point, not automatically the full change boundary. Before editing existing behavior, follow only the paths needed to understand:
+The symbol named in the request is an investigation starting point, not automatically the full change boundary. Before proposing, explaining, judging, or editing existing behavior, follow only the paths needed to understand:
 
 - the trigger, relevant callers, and downstream consumers
 - input sources, transformations, validation, serialization, persistence, remote calls, caches, outputs, and failure paths
@@ -48,7 +48,7 @@ The symbol named in the request is an investigation starting point, not automati
 
 Two fields can be semantically related without referencing each other. If field A and field B jointly determine a validation result, mapping, log event, cache key, state transition, duplicate policy, or caller-visible response, a change to A must explicitly decide whether B and their shared invariant also change. Searching only for A is not sufficient.
 
-Keep the investigation proportional. Stop following a path when it no longer affects the changed behavior, its contract, or the evidence needed to make the decision. Do not read an entire module by default, report unrelated historical defects, or turn context discovery into an unrequested refactor.
+Keep the investigation proportional. Stop following a path when it no longer affects the requested behavior, its contract, or the evidence needed to make the decision. Explicitly requested unchanged code is in scope; unrelated historical defects are not. Do not read an entire module by default or turn context discovery into an unrequested refactor.
 
 Before editing, identify the affected nodes that need a decision. After editing, revisit each node and confirm that it was updated or deliberately preserved with its invariant still valid.
 
