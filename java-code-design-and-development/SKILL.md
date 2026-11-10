@@ -1,9 +1,9 @@
 ---
-name: java-backend-code-quality
+name: java-code-design-and-development
 description: Plan, analyze, implement, or review specific Java backend code with scoped quality checks and progressive references
 ---
 
-# Java Backend Code Quality
+# Java 代码设计与开发
 
 Use for concrete Java backend production/test code or proposed implementations. Generic Java questions and unrelated document work do not trigger it.
 

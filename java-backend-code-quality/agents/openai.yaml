@@ -1,7 +1,0 @@
-interface:
-  display_name: "Java Backend Code Quality"
-  short_description: "Plan, analyze, implement, or review Java backend code"
-  default_prompt: "Use $java-backend-code-quality to plan, analyze, implement, or review the Java backend code currently in scope."
-
-policy:
-  allow_implicit_invocation: true

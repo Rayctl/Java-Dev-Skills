@@ -1,4 +1,4 @@
-# Java Backend Code Quality
+# Java 代码设计与开发
 
 用于规划、分析、编写和审查具体的 Java 后端代码。会在方案形成前、理解既有逻辑或评估优化点时应用对应规则，也在编码期间和完成后检查质量。根据任务读取命名、代码结构、方法设计、注释、异常和生命周期等详细规则。
 
@@ -421,21 +421,21 @@ cd skills
 Windows PowerShell：
 
 ```powershell
-Copy-Item -Recurse -Force ".\java-backend-code-quality" "$env:USERPROFILE\.codex\skills"
+Copy-Item -Recurse -Force ".\java-code-design-and-development" "$env:USERPROFILE\.codex\skills"
 ```
 
 Git Bash：
 
 ```bash
-cp -R ./java-backend-code-quality "$HOME/.codex/skills/"
+cp -R ./java-code-design-and-development "$HOME/.codex/skills/"
 ```
 
 复制后可用只读脚本比较仓库副本和安装副本的文件清单及 SHA-256：
 
 ```powershell
-py -3 ".\java-backend-code-quality\scripts\verify_skill_installation.py" `
-  --source ".\java-backend-code-quality" `
-  --target "$env:USERPROFILE\.codex\skills\java-backend-code-quality"
+py -3 ".\java-code-design-and-development\scripts\verify_skill_installation.py" `
+  --source ".\java-code-design-and-development" `
+  --target "$env:USERPROFILE\.codex\skills\java-code-design-and-development"
 ```
 
 退出码 `0` 表示完全一致，`1` 表示存在缺失、多余或内容不同的文件，`2` 表示输入或环境错误。目录读取失败时返回错误，不把未能枚举的文件当作不存在并误报一致。脚本忽略 `__pycache__` 和 `.pyc` 等运行缓存，不复制、覆盖或删除任何文件。
@@ -443,29 +443,31 @@ py -3 ".\java-backend-code-quality\scripts\verify_skill_installation.py" `
 安装后的入口为：
 
 ```text
-~/.codex/skills/java-backend-code-quality/SKILL.md
+~/.codex/skills/java-code-design-and-development/SKILL.md
 ```
+
+更新已有安装时，用当前目录替换此前安装的同一 Skill，并将用户级 `AGENTS.md` 的路径和调用名称同步为本文示例，避免旧目录与新目录并存、重复加载。现有质量规则、检查器脚本、CLI 参数、规则编号和退出码保持不变。
 
 ## 调用方式
 
 `agents/openai.yaml` 已允许隐式触发。为了在具体 Java 代码的规划、分析、实现和审查中稳定加载，可以在用户级 `~/.codex/AGENTS.md` 中加入：
 
 ```markdown
-## Java Backend Code Quality
+## Java 代码设计与开发
 
-Before planning, analyzing, implementing, or reviewing specific Java backend code or a proposed implementation, explicitly read and follow `$java-backend-code-quality` once for the task. Include explicitly requested existing code even without a diff; keep implementation and diff review scoped to task-owned changes. Planning, analysis, and review are read-only unless edits are authorized. Load references for the concerns under assessment, not the entire repository. After Java edits, reread changed methods and the final diff, run the deterministic checker, and perform appropriate verification. Without edits, use focused checks only when relevant and distinguish proposed verification from executed results. Generic Java questions do not trigger this workflow. Explicit project and user instructions take precedence.
+Before planning, analyzing, implementing, or reviewing specific Java backend code or a proposed implementation, explicitly read and follow `$java-code-design-and-development` once for the task. Include explicitly requested existing code even without a diff; keep implementation and diff review scoped to task-owned changes. Planning, analysis, and review are read-only unless edits are authorized. Load references for the concerns under assessment, not the entire repository. After Java edits, reread changed methods and the final diff, run the deterministic checker, and perform appropriate verification. Without edits, use focused checks only when relevant and distinguish proposed verification from executed results. Generic Java questions do not trigger this workflow. Explicit project and user instructions take precedence.
 ```
 
 也可以显式调用：
 
 ```text
-Use $java-backend-code-quality to plan, analyze, implement, or review the Java backend code currently in scope
+Use $java-code-design-and-development to plan, analyze, implement, or review the Java backend code currently in scope
 ```
 
 ## 目录结构
 
 ```text
-java-backend-code-quality/
+java-code-design-and-development/
 |-- README.md
 |-- SKILL.md
 |-- agents/
@@ -505,15 +507,15 @@ README 面向安装和快速理解，引用文件保存完整规则，Python 脚
 检查当前工作区相对 `HEAD` 的暂存、未暂存和未跟踪 Java 变更：
 
 ```powershell
-py -3 "$env:USERPROFILE\.codex\skills\java-backend-code-quality\scripts\check_java_backend_style.py" --changed --repo "C:\path\to\repo"
+py -3 "$env:USERPROFILE\.codex\skills\java-code-design-and-development\scripts\check_java_backend_style.py" --changed --repo "C:\path\to\repo"
 ```
 
 常用范围参数：
 
 ```powershell
-py -3 "$env:USERPROFILE\.codex\skills\java-backend-code-quality\scripts\check_java_backend_style.py" --changed --base origin/main --repo "C:\path\to\repo"
-py -3 "$env:USERPROFILE\.codex\skills\java-backend-code-quality\scripts\check_java_backend_style.py" --line-range "C:\path\to\Example.java:20-80"
-py -3 "$env:USERPROFILE\.codex\skills\java-backend-code-quality\scripts\check_java_backend_style.py" "C:\path\to\Example.java"
+py -3 "$env:USERPROFILE\.codex\skills\java-code-design-and-development\scripts\check_java_backend_style.py" --changed --base origin/main --repo "C:\path\to\repo"
+py -3 "$env:USERPROFILE\.codex\skills\java-code-design-and-development\scripts\check_java_backend_style.py" --line-range "C:\path\to\Example.java:20-80"
+py -3 "$env:USERPROFILE\.codex\skills\java-code-design-and-development\scripts\check_java_backend_style.py" "C:\path\to\Example.java"
 ```
 
 检查器保持只读，退出码为 `0` 表示通过、`1` 表示发现违规、`2` 表示参数、输入或环境错误。规则编号包括：
@@ -536,9 +538,9 @@ py -3 "$env:USERPROFILE\.codex\skills\java-backend-code-quality\scripts\check_ja
 校验场景文件结构：
 
 ```powershell
-py -3 ".\java-backend-code-quality\scripts\validate_semantic_evals.py" `
-  ".\java-backend-code-quality\evals\semantic-cases.json"
-py -3 ".\java-backend-code-quality\scripts\validate_project_guidance.py" `
+py -3 ".\java-code-design-and-development\scripts\validate_semantic_evals.py" `
+  ".\java-code-design-and-development\evals\semantic-cases.json"
+py -3 ".\java-code-design-and-development\scripts\validate_project_guidance.py" `
   ".\.codex\project-guidance.md"
 ```
 
@@ -547,9 +549,9 @@ py -3 ".\java-backend-code-quality\scripts\validate_project_guidance.py" `
 ## 验证
 
 ```powershell
-py -3 -m unittest discover -s "$env:USERPROFILE\.codex\skills\java-backend-code-quality\tests" -p "test_*.py" -v
-py -3 "$env:USERPROFILE\.codex\skills\.system\skill-creator\scripts\quick_validate.py" "$env:USERPROFILE\.codex\skills\java-backend-code-quality"
-py -3 "$env:USERPROFILE\.codex\skills\java-backend-code-quality\scripts\validate_semantic_evals.py"
+py -3 -m unittest discover -s "$env:USERPROFILE\.codex\skills\java-code-design-and-development\tests" -p "test_*.py" -v
+py -3 "$env:USERPROFILE\.codex\skills\.system\skill-creator\scripts\quick_validate.py" "$env:USERPROFILE\.codex\skills\java-code-design-and-development"
+py -3 "$env:USERPROFILE\.codex\skills\java-code-design-and-development\scripts\validate_semantic_evals.py"
 ```
 
 在未授予 Windows 符号链接权限的环境中，越界符号链接用例会跳过。
