@@ -1,5 +1,5 @@
 interface:
-  display_name: "Git Safe Collaboration"
+  display_name: "Git 安全协作"
   short_description: "Guard Git targets, provenance, integration and pushes"
   default_prompt: "Use $git-safe-collaboration to coordinate this Git task safely: preserve business intent, distinguish development and integration targets, retain commit provenance, load only the matching workflow, and visibly report results without expanding authorization."
 

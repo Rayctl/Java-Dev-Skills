@@ -1,4 +1,4 @@
-# Skills
+# Java-Dev-Skills
 
 个人维护的 Codex skills 仓库。每个 skill 使用独立目录，并在目录内提供面向使用者的 README 和面向 Codex 的 `SKILL.md`。Skill 入口保持精简，详细规则按任务触发后从 `references/` 渐进读取
 
@@ -6,9 +6,9 @@
 
 | Skill | 用途 |
 | --- | --- |
-| [git-safe-collaboration](git-safe-collaboration/README.md) | 核对开发目标，安全更新，保留提交来源，管理已授权集成及推送前复核 |
+| [Git 安全协作](git-safe-collaboration/README.md) | 核对开发目标，安全更新，保留提交来源，管理已授权集成及推送前复核 |
 | [Java 代码设计与开发](java-code-design-and-development/README.md) | 使用 `$java-code-design-and-development`，在具体 Java 后端代码的规划、分析、实现和审查中应用质量规则 |
-| [prd-business-understanding](prd-business-understanding/README.md) | 在 PRD 驱动的规划和实现中梳理旧行为、变化、兼容要求及关键决策依据 |
+| [PRD 业务理解与协作](prd-business-understanding/README.md) | 在 PRD 驱动的规划和实现中梳理旧行为、变化、兼容要求及关键决策依据 |
 
 PRD 驱动的规划或实现任务使用 prd-business-understanding，并按用户表达识别梳理或规划模式。先核对现状、契约和字段流转，区分事实、需求、方案和未决决策；排查疑点不自动扩大修改范围，需求更新只替换受影响决定。保留公共接口的兼容与失败行为，按职责整理内部实现，无须逐个审批方法或类。完成时映射场景、改动位置和验证结果；非 PRD 任务不触发该流程。
 
@@ -40,7 +40,7 @@ Java Skill 将规则分为两层：
 ## 安装
 
 ```bash
-git clone git@github.com:Rayctl/skills.git
+git clone git@github.com:Rayctl/Java-Dev-Skills.git
 ```
 
 进入目标 skill 目录的 README，按其中说明安装到 `~/.codex/skills`

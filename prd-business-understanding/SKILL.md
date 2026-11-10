@@ -3,7 +3,7 @@ name: prd-business-understanding
 description: Help users understand and verify business behavior for PRD-driven planning and development; separate product intent from current facts, proposed solutions, and confirmed decisions.
 ---
 
-# PRD Business Understanding And Development Collaboration
+# PRD 业务理解与协作
 
 Use for planning or implementation tasks whose requirements are driven by a product or business PRD. Do not activate for unrelated tasks. This skill clarifies business behavior and explains meaningful implementation changes; it does not replace brainstorming, planning, or code-quality skills.
 

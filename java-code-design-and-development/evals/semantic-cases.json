@@ -2043,6 +2043,16 @@
       "fixture": "The preceding read-only analysis compared a compact private null-check/delegation helper with its use sites. The user selected direct expressions in three task-owned call sites and authorized implementation. No current evidence invalidates the chosen semantics. An unrelated old helper is outside the agreed scope.",
       "expected_decisions": ["Reuse the confirmed scope and behavior without requesting the same approval again", "Load applicable editing rules, preserve the null guard and field evaluation order, and keep unrelated helpers unchanged", "Reread changed methods and final diff and run the deterministic checker and appropriate verification after edits"],
       "disallowed_decisions": ["Remain read-only despite explicit implementation authorization", "Discard the selected approach when the task mode changes", "Use read-only verification exemptions to skip post-edit checks", "Expand the task into all historical wrappers"]
+    },
+    {
+      "id": "prefer-build-over-architectural-assembler-label",
+      "title": "Familiar construction names preserve responsibility without adding a Builder layer",
+      "mode": "analysis",
+      "triggers": ["naming", "method-design"],
+      "prompt": "Assembler 看不懂，能不能用 build 或 Builder？先给命名建议",
+      "fixture": "assembleOrderRequest(order, address) only constructs OrderRequest from values already supplied and has no separate type or construction lifecycle. A second method called assembleCustomerRequest queries a remote customer service before creating the request. An unrelated framework callback requires an Assembler interface name. No source edits or new classes are authorized.",
+      "expected_decisions": ["Prefer buildOrderRequest for the pure construction when it expresses the same contract more clearly", "Keep remote acquisition visible in the second operation's name or proposed responsibility boundary instead of disguising it as pure construction", "Keep the framework-required name and avoid a universal Assembler blacklist", "Do not introduce a Builder class or wrapping method solely to replace vocabulary", "Present read-only naming advice within the selected scope"],
+      "disallowed_decisions": ["Prefer Assembler solely because it sounds architectural", "Mechanically rename every Assembler to Builder", "Create a new class hierarchy merely to satisfy the word preference", "Hide a remote call behind an apparently pure build method", "Rename unrelated historical code"]
     }
   ]
 }

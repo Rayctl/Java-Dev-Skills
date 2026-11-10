@@ -1,4 +1,4 @@
-# PRD Business Understanding
+# PRD 业务理解与协作
 
 Use this skill for PRD-driven planning and implementation. It helps establish old behavior, requested changes, compatibility, and unresolved business decisions, then explains behavior-changing code in context.
 

@@ -414,8 +414,8 @@ for (ApiSchemaDocument schema : activeSchemaList) {
 克隆仓库并进入根目录：
 
 ```bash
-git clone git@github.com:Rayctl/skills.git
-cd skills
+git clone git@github.com:Rayctl/Java-Dev-Skills.git
+cd Java-Dev-Skills
 ```
 
 Windows PowerShell：

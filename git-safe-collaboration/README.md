@@ -1,4 +1,4 @@
-# Git Safe Collaboration
+# Git 安全协作
 
 正式标识与安装目录统一为 `git-safe-collaboration`，调用 `$git-safe-collaboration`。能力从“检查最新代码”扩展为 Git 安全协作；不是通用命令大全，也不接管 PRD 或业务设计。
 
@@ -72,11 +72,11 @@ update 的 UPDATED 表示快进及复查成功。DIRTY、FETCH_BLOCKED、UPDATE_
 将本目录同步到 C:/Users/27445/.codex/skills/git-safe-collaboration，排除 __pycache__；保留其他 Skill 和全局 Java 规则。用户级 AGENTS.md 的 Git 部分采用下列规则（路径按环境调整）：
 
 ```markdown
-## Git Safe Collaboration
+## Git 安全协作
 
 Apply this section for substantive code planning, creation or modification, or an explicit Git operation (commit, transfer, integrate, recovery, push, or branch management). If the chat has no associated repository and the user gave no repository path, silently skip: no Git commands or Skill invocation. Identify a candidate only from the current directory or an explicitly provided repository path; confirm with git -C "<candidate>" rev-parse --is-inside-work-tree. Do not search unrelated directories. Failed/non-worktree candidates silently skip.
 
-For a confirmed worktree, explicitly read C:\Users\27445\.codex\skills\git-safe-collaboration\SKILL.md once as $git-safe-collaboration (Git Safe Collaboration). Load only the reference matching the action. For ordinary code work, follow development.md and load language/task Skills only after readiness passes or related dirty work is explicitly permitted. For an explicitly requested Git diagnosis/recovery/integration, use that scoped workflow rather than treating the ordinary development gate as a ban on resolving the requested operation. Language rules still apply to any source edits.
+For a confirmed worktree, explicitly read C:\Users\27445\.codex\skills\git-safe-collaboration\SKILL.md once as $git-safe-collaboration (Git 安全协作). Load only the reference matching the action. For ordinary code work, follow development.md and load language/task Skills only after readiness passes or related dirty work is explicitly permitted. For an explicitly requested Git diagnosis/recovery/integration, use that scoped workflow rather than treating the ordinary development gate as a ban on resolving the requested operation. Language rules still apply to any source edits.
 
 Keep the confirmed development branch distinct from the current checkout, existing remote comparison target, integration source/destination, and push destination. Before an edit batch or Git mutation, locally verify the expected branch/HEAD for that action; CURRENT alone does not establish the correct task branch. Integration completion does not redefine the next development target. Reuse remote observations across continuous follow-ups only under the Skill's invalidation rules; verify every actual push separately.
 

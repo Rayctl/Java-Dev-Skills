@@ -27,6 +27,9 @@ Read the primary call site again: must the reader first translate an unfamiliar 
 | Fill missing address fields from already available data | `hydrateAddress` | `fillMissingAddressFields` |
 | Repair an inconsistent schema revision | `reconcileSchemaRevision` | `repairSchemaRevision` |
 | Construct a shipment request in memory | `instantiateShipmentRequest` | `buildShipmentRequest` |
+| Construct an order request from already available values | `assembleOrderRequest` | `buildOrderRequest` |
+
+Do not default to `Assembler` or `assembleXxx` merely to give ordinary construction an architectural label. When construction is the actual responsibility, prefer `buildXxx`; for a target-shape conversion, consider `convertToXxx`. A dedicated `XxxBuilder` type may be appropriate when it already owns meaningful construction, but renaming alone does not justify creating that type, another wrapper, or a standard Builder pattern. Keep required framework names and precise established project terms. If the operation also queries, persists, or calls remotely, preserve that visible contract rather than mechanically replacing its name with `buildXxx`.
 
 These examples are not substitutions or a forbidden-word list. If reconciliation compares two sources, resolves conflicts, and synchronizes both, `repair` may be inaccurate. If hydration loads data remotely or persists changes, a name suggesting only in-memory filling hides relevant behavior. Preserve the existing operation, absence rules, and side effects when renaming.
 

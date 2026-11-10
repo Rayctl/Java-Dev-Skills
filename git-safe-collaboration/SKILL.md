@@ -3,7 +3,7 @@ name: git-safe-collaboration
 description: Safely coordinate Git development targets, commit provenance, integration, and push verification in a confirmed repository.
 ---
 
-# Git Safe Collaboration
+# Git 安全协作
 
 Invoke as `$git-safe-collaboration`. This is a Git workflow guard, not a general command cookbook or business-design authority.
 
