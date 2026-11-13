@@ -98,6 +98,18 @@ Before adding a configuration option, default threshold, account-selection rule,
 
 When applying a rule, state material evidence in the reasoning or finding. Do not present local guidance or a recommendation as an existing repository standard. Local guidance may direct targeted verification and may beat a generic recommendation when stronger evidence is silent, but it cannot create a finding by itself. Examples illustrate a rule; they do not create a universal ban.
 
+## Check New Restrictions Before Enforcing Them
+
+When the task introduces or reuses a size cap, timeout, query/page budget, retention period, truncation, retry count, whitelist, or required input, establish the rule before coding it. Briefly identify its source and purpose, value and unit, applicable entry points, and the consequence when it is reached. Inspect annotations, filters, helper defaults, and inherited settings as well as obvious constants. A conversation note or short rationale is enough; no separate register or approval document is required.
+
+Distinguish a formal contract or user decision from an applicable infrastructure limit, a measured resource constraint, and a proposed engineering safeguard. A configuration property, named constant, existing test, or nearby implementation does not by itself justify a value for this operation. Check the representation and unit being bounded, such as encoded bytes versus decoded text, and the combined effect of pagination, per-call timeouts, and outer budgets when applicable.
+
+Keep the reached condition distinct from a business outcome. A caller stopping its wait does not prove remote failure or cancellation; reaching a page cap does not prove the remaining data is absent. Truncated structured data is not a complete result. A retention expiry does not establish the remote task's outcome. Do not promote a local experiment's waiting period or reporting cutoff into product acceptance criteria without a confirmed basis.
+
+Necessary resource and security protections are legitimate. Documentation silence alone proves neither that a safeguard is wrong nor that its chosen value is justified. Reuse applicable protections; do not remove bounds wholesale or turn every literal into configuration. Explain a consequential proposal and resolve only material open choices before changing admissible inputs, result completeness, failure semantics, or task lifetime. Routine values already settled by current contracts do not require another question.
+
+Before closing, revisit every new restriction and its success, boundary, and failure paths against the accepted contract. Tests must exercise justified behavior rather than merely repeat the value the implementation invented. Correctness and severity follow actual impact; this is semantic review, not a ban on numeric literals or a keyword-based checker rule.
+
 ## Decide Under Uncertainty
 
 Resolve low-risk, reversible readability choices using the Skill default and the surrounding style, and disclose a consequential assumption in the result. Ask the user only when missing or conflicting evidence leaves materially different outcomes, including:
@@ -110,6 +122,8 @@ Resolve low-risk, reversible readability choices using the Skill default and the
 - a new cross-cutting abstraction or architectural boundary
 
 Before asking, report the evidence found, the unresolved decision, the concrete options, their costs, and a recommendation. If an established extension point or contract already resolves the choice, follow it without pausing.
+
+Verify the question's premise before offering solutions: a differently named identifier or unfamiliar field does not prove that a translation table, extra input, or new configuration is needed. Trace current values and the consumer contract, including the simplest existing path. When a reply expresses a tentative preference while still questioning a material premise, answer that question and settle the remaining uncertainty before implementing the dependent change. Clear authorization and decisions unaffected by that uncertainty remain valid.
 
 Report a missed semantic relationship according to its actual effect: likely incorrect behavior or a broken contract is `P1` or `P2` depending on certainty and impact, loss of material diagnostic capability is normally `P2`, and unnecessary navigation or local understanding cost is `P3`.
 

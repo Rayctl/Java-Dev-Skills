@@ -97,6 +97,8 @@ Locate one authoritative owner for each rule:
 - keep configuration-time and runtime semantics aligned when they enforce the same rule
 - when validation is non-blocking, ensure its result controls only the intended later action
 
+Reuse mechanism separately from scenario policy. Sharing a parser, exporter, task loop, or converter does not establish that its caller-specific type whitelist, size cap, identity restriction, or failure transition applies to another entry point. Compare each consumer's accepted input, purpose, authority, and failure consequence before sharing the entire validation path. Keep genuinely common security and format checks; retain separate policies when the contracts differ. For example, a general document import may reuse a provider-result parser without inheriting that provider's supported-operation list. Verify shared behavior and, when policies differ, a case that must remain different; removing duplication alone is not proof of compatibility.
+
 ## Deep Verification
 
 Map tests to the changed contracts and lifecycles that apply:

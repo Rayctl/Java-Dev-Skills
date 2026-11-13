@@ -12,6 +12,8 @@ For cross-service adaptation, trace actual caller fields, defaults, matching and
 
 During implementation, explain only business-significant changes. Finish with a short mapping from scenarios to changed locations and verification. The skill does not apply to unrelated work or replace existing brainstorming, planning, or code-quality skills.
 
+Before offering a material choice, verify that its premise is true and that the existing fields or contract do not already satisfy the need. A tentative preference accompanied by a question about the concepts is not a settled decision on that unresolved premise: answer it, check the facts, and pause only the dependent change. Clear authorization and unrelated accepted decisions continue to apply.
+
 ## Install
 
 PowerShell:

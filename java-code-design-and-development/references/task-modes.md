@@ -18,6 +18,8 @@ State the approach, its business or contract basis, important tradeoffs, unresol
 
 Resolve evidence locally first. If a remaining ambiguity changes behavior, data, failures, diagnosis, lifecycle, or architecture beyond approved decisions, explain the concrete options and impact and ask before finalizing that dependent choice. Continue independent analysis where useful.
 
+Before proposing new required fields, local restrictions, configuration, or layers, verify their need and existing owners under [evidence-and-verification.md](evidence-and-verification.md). A recommendation is not an accepted requirement. Keep caller readiness concrete: trace where required inputs come from and how the consumer uses synchronous results, task handles, errors, or file content; compilation alone does not settle those contracts.
+
 ## Analysis
 
 For explanation, trace the actual scoped behavior and the business reason supported by evidence. Do not force an optimization report when the user only asks how code works. For an optimization request, distinguish:

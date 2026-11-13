@@ -531,6 +531,43 @@
           ]
         }
       ]
+    },
+    {
+      "id": "verify-identifier-premise-before-offering-new-machinery",
+      "title": "Different names do not establish a missing mapping or required input",
+      "mode": "direct-planning",
+      "triggers": ["existing-contract", "claim-classification", "source-provenance"],
+      "prompt": "按文档规划这个接入，调用方只选择已有 API，尽量沿用现有能力",
+      "fixture": "The existing selected API contains providerOperationCode. The provider document calls its required input operationCode; the supplied valid request uses exactly the existing stored value. A draft plan proposes a new standardOperationCode and asks the user to choose between a server translation table and a new UI selector. No evidence establishes a distinct identity or missing value.",
+      "expected_decisions": ["Trace the existing stored value and provider contract before accepting the draft plan's premise", "Use the supported existing-field path without inventing another mapping or required UI input", "Classify the extra-field design as a proposal rather than a confirmed requirement", "Keep unrelated accepted behavior and scope unchanged"],
+      "disallowed_decisions": ["Infer different identities solely from different names", "Present only the two new mechanisms as possible choices", "Ask the user a factual question already resolved by the current artifacts", "Add configuration merely because the user requested a reasonable architecture"]
+    },
+    {
+      "id": "tentative-choice-with-unresolved-concept-is-not-settled",
+      "title": "A user's conceptual question must be resolved before acting on dependent assent",
+      "mode": "dialogue",
+      "triggers": ["collaborative-clarification", "evidence-boundaries", "contract-boundaries", "scope-preservation"],
+      "prompt": "你说的对应关系是选择哪个处理器吗？按这个理解，我可能倾向于后端配置这个方案",
+      "fixture": "A preceding proposal offered a new server-side identifier translation or a caller-visible selector. It has not verified whether the identifiers differ, and the user is asking whether translation means handler selection. The accepted scope excludes new UI inputs and preserves the existing save behavior. The current code and provider contract can be inspected; only the dependent identifier decision is unresolved.",
+      "expected_decisions": ["Explain identifier translation versus handler selection and verify the actual need before treating the tentative choice as approval", "Do not implement a new mapping configuration while its factual premise remains unresolved", "Keep the no-new-UI-input and existing-save decisions intact", "Continue independent authorized investigation rather than restarting all requirements"],
+      "disallowed_decisions": ["Count the tentative answer as unconditional approval of a new configuration", "Dismiss the user's conceptual question and continue editing", "Invent different identifier semantics", "Require every unaffected decision to be approved again"],
+      "followups": [
+        {
+          "prompt": "已经核实：两套编码确实不同，现有配置也没有对应信息。确认由后端维护对应关系，不增加前端必填项，保存流程保持不变。按这个方案继续。",
+          "expected_decisions": ["Accept the now explicit decision and proceed within its authorized scope", "Preserve the no-new-UI-input and save-behavior boundaries", "Do not keep treating the settled choice as merely tentative"],
+          "disallowed_decisions": ["Request the same approval again solely because the earlier reply was tentative", "Use the server mapping decision to add a UI selector or alter persistence behavior"]
+        }
+      ]
+    },
+    {
+      "id": "confirmed-restriction-does-not-need-repeat-approval",
+      "title": "A justified and explicitly accepted bound is carried into implementation",
+      "mode": "implementation",
+      "triggers": ["existing-contract", "scope-preservation", "implementation-explanation"],
+      "prompt": "就按刚核实的完整请求 UTF-8 字节上限实现，不用再确认这个值。超过时使用已确认的请求过大错误，其他行为保持不变。",
+      "fixture": "The provider's current contract specifies the limit and the user has explicitly accepted its scope, byte unit and rejection outcome. Existing project configuration already supplies the value. No new input field, configuration property, retry policy or task-lifetime change is needed.",
+      "expected_decisions": ["Proceed with the accepted constraint and existing configuration without another approval step", "Explain the business-relevant rejection boundary and verification in the proper byte representation", "Keep other authorized behavior and unaffected decisions unchanged"],
+      "disallowed_decisions": ["Block implementation solely because the value is numeric", "Remove the agreed protection because the PRD does not repeat it", "Create another configuration property or required input without need", "Turn the rejection rule into a general latency or completion SLA"]
     }
   ]
 }

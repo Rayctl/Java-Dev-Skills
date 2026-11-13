@@ -2053,6 +2053,126 @@
       "fixture": "assembleOrderRequest(order, address) only constructs OrderRequest from values already supplied and has no separate type or construction lifecycle. A second method called assembleCustomerRequest queries a remote customer service before creating the request. An unrelated framework callback requires an Assembler interface name. No source edits or new classes are authorized.",
       "expected_decisions": ["Prefer buildOrderRequest for the pure construction when it expresses the same contract more clearly", "Keep remote acquisition visible in the second operation's name or proposed responsibility boundary instead of disguising it as pure construction", "Keep the framework-required name and avoid a universal Assembler blacklist", "Do not introduce a Builder class or wrapping method solely to replace vocabulary", "Present read-only naming advice within the selected scope"],
       "disallowed_decisions": ["Prefer Assembler solely because it sounds architectural", "Mechanically rename every Assembler to Builder", "Create a new class hierarchy merely to satisfy the word preference", "Hide a remote call behind an apparently pure build method", "Rename unrelated historical code"]
+    },
+    {
+      "id": "new-input-cap-needs-a-contract-basis",
+      "title": "A proposed input cap is not approved by putting it in DTO validation",
+      "mode": "implementation",
+      "triggers": ["evidence-and-verification", "contracts-and-lifecycles"],
+      "prompt": "接收文档 JSON 并转换为草稿，按现有接口契约实现",
+      "fixture": "The established endpoint accepts document JSON without a feature-specific size rule. A draft implementation adds a numeric @Size maximum, repeats it in a private parser, and adds a test that larger input is rejected. No provider limit, measured resource basis or user decision supplies that threshold. Existing transport protections are independently documented.",
+      "expected_decisions": ["Identify the new admission rule in both the DTO and parser, including its unit and rejection behavior", "Treat the added test and numeric constant as implementation evidence rather than authorization", "Check current transport protections and explain any remaining engineering proposal before adding a consequential restriction", "Continue independent authorized work while resolving only the material limit decision"],
+      "disallowed_decisions": ["Claim the input cap is a requirement because a test passes", "Copy a nearby operation's limit without checking applicability", "Delete documented transport protections merely because the PRD is silent", "Turn every literal into configuration"]
+    },
+    {
+      "id": "justified-byte-limit-retains-correct-units",
+      "title": "A formal encoded-body limit is retained with the right measurement",
+      "mode": "review",
+      "triggers": ["evidence-and-verification", "contracts-and-lifecycles"],
+      "prompt": "检查这个请求大小校验是否有依据，别改代码",
+      "fixture": "The provider contract explicitly limits the full serialized HTTP body to one MiB of UTF-8 bytes. The user approved enforcing that boundary. Current code checks Java String.length before adding the JSON envelope; inputs can contain Chinese text and supplementary characters. The operation has an established request-too-large error.",
+      "expected_decisions": ["Retain the justified protection and existing approved decision", "Measure the representation actually constrained by the provider, including the envelope and UTF-8 bytes", "Explain why text length alone does not establish the byte limit", "Suggest boundary cases with multibyte data without inventing a new universal cap"],
+      "disallowed_decisions": ["Remove the limit because the feature PRD does not repeat it", "Treat Java text length as encoded byte count", "Ask the user to reapprove the already settled provider constraint", "Invent a fixed threshold for all requests"]
+    },
+    {
+      "id": "experiment-deadline-is-not-product-acceptance",
+      "title": "A local wait budget does not determine remote failure or business acceptance",
+      "mode": "analysis",
+      "triggers": ["evidence-and-verification", "contracts-and-lifecycles"],
+      "prompt": "核对验证报告中的通过率和超时结论",
+      "fixture": "A local validation runner stops waiting after a developer-selected interval. The accepted acceptance criteria concern output correctness and completeness and contain no latency SLA. A report classifies every unfinished observation as a failed remote job and excludes otherwise correct later results from product acceptance.",
+      "expected_decisions": ["Separate the runner's observation deadline from remote terminal state and confirmed acceptance criteria", "Keep elapsed time and unfinished observations as reported evidence without manufacturing failure or cancellation", "Correct unsupported acceptance claims while retaining the useful local execution bound", "State which results require later observation rather than asserting a terminal outcome"],
+      "disallowed_decisions": ["Promote a tool default into a business SLA", "Treat stopping local polling as remote cancellation", "Remove all execution bounds to avoid making a decision", "Claim unobserved late results were validated"]
+    },
+    {
+      "id": "page-budget-does-not-prove-result-completeness",
+      "title": "A bounded query must not report unread pages as absent",
+      "mode": "review",
+      "triggers": ["evidence-and-verification", "contracts-and-lifecycles"],
+      "prompt": "检查分页查询返回结果完整吗？",
+      "fixture": "An endpoint queries at most a configured number of pages for an engineering time budget. On the last permitted page the provider returns a next cursor. The method discards it and returns COMPLETE. Another path cuts a structured response to a logging length and then presents that prefix as the business result. No contract permits partial successful results.",
+      "expected_decisions": ["Distinguish budget exhaustion from complete traversal and identify the discarded continuation", "Keep truncated diagnostic text separate from complete structured business output", "Require a supported continuation or explicit incomplete-result/failure contract instead of silently claiming success", "Assess the purpose and basis of the budgets without automatically removing them"],
+      "disallowed_decisions": ["Conclude there are no more records because the local loop stopped", "Treat a text prefix as a complete JSON result", "Choose a new failure policy without a contract", "Use a passing pagination test that omits nextCursor as proof"]
+    },
+    {
+      "id": "shared-parser-does-not-share-provider-admission",
+      "title": "General imports do not inherit a provider-specific operation whitelist",
+      "mode": "implementation",
+      "triggers": ["contracts-and-lifecycles", "method-design"],
+      "prompt": "人工导入和第三方返回都解析同一种文档，尽量复用现有代码",
+      "fixture": "Both entries use the same documented JSON envelope and authorization checks. The provider-generation entry alone permits three operation types. A proposed reuse makes the general manual importer call that entire entry's validator, rejecting additional operation types that manual import already supports. The JSON scanning and decoding algorithm is genuinely shared.",
+      "expected_decisions": ["Share the decoding mechanism while retaining each entry's established operation eligibility", "Trace the provider whitelist's purpose before moving or reusing it", "Keep common security and format checks where their contracts agree", "Verify one manually permitted type outside the provider list as well as shared valid and malformed input"],
+      "disallowed_decisions": ["Apply provider restrictions to manual import merely because the parser is shared", "Remove authorization to make reuse easier", "Duplicate the entire non-trivial parsing algorithm without comparing alternatives", "Silently broaden the provider's accepted operation types"]
+    },
+    {
+      "id": "shared-checks-with-the-same-contract-can-remain",
+      "title": "Separating policies does not require duplicating truly common protections",
+      "mode": "review",
+      "triggers": ["contracts-and-lifecycles", "evidence-and-verification"],
+      "prompt": "两个入口复用了文档校验，是不是应该拆开？",
+      "fixture": "A signed upload and a manual import share a formal document format and the same accepted decoded-size limit. Both invoke one validator that enforces only those common rules. Authentication and operation eligibility remain at their respective entries. No consumer-specific restriction leaks across them.",
+      "expected_decisions": ["Retain the shared validator because subject, representation, purpose and failure consequence match", "Keep scenario-specific eligibility at its owners", "Do not grade valid reuse as a defect merely because there are multiple entries"],
+      "disallowed_decisions": ["Require separate validators for every entry regardless of contract", "Remove the agreed size protection", "Invent a provider-only rule to justify a split"]
+    },
+    {
+      "id": "fixed-synchronous-predicate-compares-the-full-path",
+      "title": "A reusable scan does not by itself justify opaque synchronous callback flow",
+      "mode": "analysis",
+      "triggers": ["method-design", "control-flow"],
+      "prompt": "这个读取方法里的 return true 怎么又返回了文档？给我更直白的方案",
+      "fixture": "Three application-controlled read methods call extract(text, Predicate<JsonNode>). Each private lambda recognizes a fixed envelope, extract calls accept.test(node), and then returns the node. No external caller supplies a predicate. The original path has candidate ordering, malformed-candidate fallback and distinct errors that must remain.",
+      "expected_decisions": ["Explain predicate return versus selected-object return using the whole call path", "Compare ordinary direct methods or branches when they make the small fixed selection clearer", "Preserve candidate order, accepted formats, fallback and failure semantics", "Treat fewer lines and scan reuse as insufficient by themselves"],
+      "disallowed_decisions": ["Only expand the lambda's boolean expression and claim the indirection was removed", "Replace the predicate with obscure mode flags or mutable result holders", "Require a registry or new strategy hierarchy", "Drop an accepted format while simplifying"]
+    },
+    {
+      "id": "meaningful-synchronous-callback-can-remain",
+      "title": "Caller-supplied predicates can be useful without asynchronous execution",
+      "mode": "review",
+      "triggers": ["method-design"],
+      "prompt": "这里用了 Predicate，也需要去掉吗？",
+      "fixture": "A documented search API intentionally accepts a caller-supplied predicate. Two current consumers supply different useful rules, the call sites are compact, and selection order and exceptions are specified. It runs synchronously and does not hide I/O or mutable output state.",
+      "expected_decisions": ["Retain the real caller-supplied variation when the whole path is clearer", "Distinguish synchronous filtering from deferred-work lifecycle requirements", "Assess readability and contract rather than the mere presence of Predicate"],
+      "disallowed_decisions": ["Ban a predicate because it is synchronous", "Require duplicate search algorithms solely to remove a callback", "Apply a blanket lambda or stream prohibition"]
+    },
+    {
+      "id": "type-placement-follows-module-evidence",
+      "title": "New shared models follow actual consumers and preserve dependency direction",
+      "mode": "implementation",
+      "triggers": ["method-design", "evidence-and-verification"],
+      "prompt": "为这几个入口新增任务状态枚举和内部结果对象，沿用项目结构",
+      "fixture": "Formal repository rules and same-role examples place shared enums and business objects in a common module. The service depends on common, while the public API module also depends on common. A proposed common result object imports a view DTO from the API module. Only the new task types and their direct consumers are in scope.",
+      "expected_decisions": ["Inspect same-role examples, module rules and actual imports before placing the types", "Keep shared contracts at the permitted dependency level without making common depend on the API view model", "Convert at the appropriate owner without moving unrelated historical types", "Check affected references and compilation after any move"],
+      "disallowed_decisions": ["Put all new types under application solely because the feature starts there", "Copy the view DTO dependency into common for field reuse", "Mandate common placement for every Java repository", "Move all old types as part of this focused task"]
+    },
+    {
+      "id": "feature-parser-needs-no-generic-package-layer",
+      "title": "A substantive feature parser can stay near its owner",
+      "mode": "review",
+      "triggers": ["method-design"],
+      "prompt": "新增解析类和构建类的包是不是还要拆？",
+      "fixture": "A feature-local result package contains a non-trivial escaped-JSON reader and a builder with real field-validation work. Only that feature consumes them, repository examples use responsibility-based feature packages, and no reverse dependency exists. One additional class only forwards a builder call without an independent contract.",
+      "expected_decisions": ["Allow the substantive reader and builder to remain near the feature owner", "Compare removal of the pure forwarding class at its real caller", "Avoid creating generic top-level parser/builder packages or forcing all parsing into one long service method"],
+      "disallowed_decisions": ["Create another package layer solely because of the class suffix", "Delete the non-trivial reader because it has one feature consumer", "Retain the forwarding class solely for architectural symmetry"]
+    },
+    {
+      "id": "reference-preview-is-not-complete-rule-coverage",
+      "title": "Progressive reading follows applicable sections beyond a shortened preview",
+      "mode": "implementation",
+      "triggers": ["method-design", "evidence-and-verification"],
+      "prompt": "按现有规则简化这个同步回调，再继续其他工作",
+      "fixture": "The agent has read the Skill entry and a shortened method-design preview that stops before the synchronous-callback section. The task directly concerns callback selection, return flow and fallback. A reference index points to that section; unrelated exception-message and remote-call rules are not triggered.",
+      "expected_decisions": ["Read the complete applicable callback and behavior-preservation sections before editing", "Use the reference index or targeted section lookup rather than treating the fixed preview as completion", "Avoid loading every unrelated reference just to compensate for the shortened output"],
+      "disallowed_decisions": ["Claim the callback rule was covered merely because a file-open command ran", "Skip a required section to save context", "Load the whole repository as a substitute for targeted reading"]
+    },
+    {
+      "id": "consumer-readiness-requires-input-and-output-contracts",
+      "title": "Compilation does not settle where a caller obtains a newly required input",
+      "mode": "planning",
+      "triggers": ["task-modes", "evidence-and-verification", "contracts-and-lifecycles"],
+      "prompt": "接口契约能先交给其他同事对接了吗？",
+      "fixture": "The plan introduces a mandatory operationCode not described in the caller's UI or contract. Existing selected API data may already supply the needed value but has not been traced. Export returns a filename and JSON content inside the normal response envelope, not a binary stream. Compilation passes; no agreed code mapping or new input collection is established.",
+      "expected_decisions": ["Trace the required value from the existing selection through the provider contract before declaring the new input necessary", "State the unresolved contract explicitly and avoid claiming full caller readiness from compilation", "Describe the actual export envelope and how the caller uses filename/content", "Prefer an existing supported input path before proposing another required field or configuration"],
+      "disallowed_decisions": ["Declare the interface ready solely because it compiles", "Document a binary download response that the endpoint does not return", "Invent an identifier mapping from different field names", "Ask the user to select only between two unverified new mechanisms"]
     }
   ]
 }

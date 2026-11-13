@@ -59,6 +59,8 @@ Method cohesion, cohesive parameter values, changing snapshots, loop-versus-stre
 
 Separating a database query, remote call, or non-trivial preparation from an enhanced-for source is a semantic readability preference. The checker does not classify methods by name, flag every source call, or prove lazy evaluation and resource-scope equivalence. It adds no automatic rule for this preference; review must distinguish simple accessors and preserve repeated conditions in other loop forms.
 
+Restriction provenance and applicability, units and reached-limit outcomes, shared-mechanism versus scenario-policy boundaries, synchronous callback readability, and module/type placement require semantic review. The checker cannot justify a threshold from a constant or test, establish approval from a tentative reply, or infer architecture rules from package names. Do not add number, callback, class-suffix, or directory keyword rules for these decisions.
+
 ## Exit Codes
 
 End-to-end field provenance and final assignments, loss of identity/cardinality, concrete absence shapes, comparable units, mixed versions, representation round trips, purpose-specific predicates, hidden output parameters, and exception-boundary changes require semantic review. The checker does not prove them from setters, class names, test counts, or log presence, and does not add keyword rules for these decisions.

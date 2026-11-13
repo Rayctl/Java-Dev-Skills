@@ -80,6 +80,12 @@ Use deferred functions only when a lock, retry, transaction, cache, fallback, or
 
 Do not hide meaningful I/O, mutation, retry, fallback, compensation, or cleanup behind a method that appears to be a pure calculation or predicate. Method names and boundaries must expose caller-relevant effects.
 
+## Compare Synchronous Callbacks With Direct Calls
+
+For an application-controlled synchronous callback, read the complete caller, callback body, invocation, and returned result together. In a method that accepts a predicate and returns a selected object, distinguish the predicate's boolean result from the object's return path. Fewer lines or a reusable scanning loop does not alone justify this indirection. With a small fixed set of conditions, prefer ordinary methods or local branches when they make selection and result flow easier to follow.
+
+Keep a callback when it represents real caller-supplied variation or an established API and improves the whole path. This is not a ban on lambdas, streams, or framework callbacks; synchronous predicates do not require an asynchronous lifecycle to be useful. Do not remove a callback by adding obscure mode flags, mutable output holders, forwarding wrappers, or a strategy registry. Preserve candidate order, fallback, evaluation count, supported formats, and exception behavior, rather than simplifying only the happy path.
+
 ## Read The Whole Normal Path
 
 Check whether a supposedly input-only parameter is a hidden output. Passing a mutable map through validation helpers to collect data for later assembly couples otherwise separate responsibilities. Prefer returning the existing query result explicitly and letting validation and assembly consume it when that clarifies the path. Keep deliberate mutation APIs whose names and contracts expose it; do not introduce a context class, wrapper family, or another remote call merely to remove an output parameter.
@@ -129,6 +135,14 @@ Apply this preference to new or edited non-static inner classes, static nested c
 Nesting may remain when the type truly belongs to its enclosing implementation and reading the non-trivial behavior together reduces navigation, or when a meaningful Builder or a framework contract requires that identity. A one-place flag bag, fewer files, or access to outer fields alone does not justify nesting. If outer-instance access is unnecessary and the language permits it, prefer a static nested type to avoid an implicit enclosing-instance reference.
 
 Ordinary tests and mocks do not trigger a type hierarchy rewrite; framework-required nested tests can remain. This is a default preference subordinate to formal project conventions and explicit user rules, not a categorical ban.
+
+## Place Types With Their Responsibility
+
+Before introducing or moving a class, enum, business object, or configuration type, inspect the nearest applicable same-role examples and formal module rules. Check actual consumers and dependency direction, not merely the type's suffix. Respect established naming and placement while preserving framework discovery, serialization, configuration binding, and visibility contracts.
+
+A new feature does not automatically need top-level parser/builder packages, another application service, or a shared module. Keep feature-specific processing near its owner when that reduces navigation; place genuinely shared contracts where their consumers can depend on them without a reverse dependency. Do not make a shared model depend on an upper-layer transport or view model just to reuse a field shape. Neither every business object belonging in a common module nor every parser needing its own package is a universal rule.
+
+Compare the full path before adding a forwarding class or moving one. Preserve a non-trivial parser or builder that owns real work, and avoid moving unrelated historical types for consistency. After a move, check references and affected runtime identities; use appropriate compilation or clean-build verification when stale outputs could conceal a missing or duplicate class.
 
 ## Scope And Severity
 

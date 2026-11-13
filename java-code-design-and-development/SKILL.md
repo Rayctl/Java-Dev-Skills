@@ -34,9 +34,9 @@ In confirmed worktrees, read [project-guidance.md](references/project-guidance.m
 
 ## Reference Routing
 
-Load references for the scoped concern before deciding, assessing, or editing; do not route by unrelated collaborators:
+Read complete relevant sections before deciding or editing; a fixed line preview is not rule coverage. Skip unrelated collaborators:
 
-- [method-design.md](references/method-design.md): helpers, compact fields or constants, wrappers, diagnostic scaffolding, deferred work, parameter meaning, new or edited nested types, or method granularity
+- [method-design.md](references/method-design.md): helpers, compact fields/constants, wrappers, diagnostics, callbacks, deferred work, parameter/type design, placement, or granularity
 - [structure-choice.md](references/structure-choice.md): real variation during planning/implementation, or explicitly requested structural optimization in analysis; no unsolicited pattern-selection exercise in review
 - [comments-and-javadoc.md](references/comments-and-javadoc.md): Java class/method/doc edits, requested documentation/stage-coverage analysis, or planning independent actions and hidden contracts; no comment defects in unwritten code
 - [naming.md](references/naming.md): vague or unfamiliar words, state/collection names, enum lookups, renames, `normalize`, or unclear responsibility
@@ -44,14 +44,14 @@ Load references for the scoped concern before deciding, assessing, or editing; d
 - [remote-calls.md](references/remote-calls.md): HTTP, Feign, RPC, external SDK, or their logging, response parsing, error mapping, and provider failures
 - [contracts-and-lifecycles.md](references/contracts-and-lifecycles.md): multi-stage contracts, correlated results, transactions, cross-store/async work, retries, caches, compensation, locks, resources, or failure policy
 - [control-flow.md](references/control-flow.md): ternaries, branches, repeated decisions, structural literals, loops, braces, or long expressions
-- [evidence-and-verification.md](references/evidence-and-verification.md): existing behavior/data, related fields, business diagnostics, legacy logic, evidence conflicts, or file-rewriting tools
+- [evidence-and-verification.md](references/evidence-and-verification.md): new limits/defaults, existing behavior/data, related fields, diagnostics, evidence conflicts, or file-rewriting tools
 - [checker.md](references/checker.md): advanced scope, exact CLI behavior, errors, or rule identifiers
 
 ## Quality Gates
 
 Apply these quality gates to the scoped code or proposed behavior; distinguish current defects from proposed risks:
 
-- preserve caller-visible semantics the task does not authorize changing; implement approved behavior changes and update affected callers and tests rather than treating old code as the specification
+- preserve caller-visible semantics unless change is authorized; distinguish proposed restrictions from requirements, implement approved changes, and update callers/tests instead of treating old code as the specification
 - make names and call sites reveal the subject, action, result, parameter meaning, and meaningful side effects; expose collection key/cardinality and duplicate policy
 - trace related values through validation, mapping, serialization, persistence, remote calls, caches, logs, errors, and outputs; preserve permitted evidence of key inputs, changes, and results needed for diagnosis
 - assign clear owners and safe ordering for validation, state transitions, persistence, cleanup, delayed work, retries, compensation, and resources
