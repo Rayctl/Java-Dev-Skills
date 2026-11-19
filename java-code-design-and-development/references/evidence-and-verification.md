@@ -36,6 +36,16 @@ The final pass is not a substitute for checkpoints. It rereads the complete chan
 Derive meaningful expected results from the accepted contract and concrete examples, not solely by copying the implementation's current assignments into test assertions. When requirements change, update the affected expectations and dependent conclusions while preserving unaffected decisions. Discovering a related historical risk does not authorize repairing it; distinguish a proven regression from a hypothesis and explain any change required outside the agreed scope. An exclusion for one planning or commit operation does not silently become a permanent review exclusion.
 
 
+## Quality Requirements And Acceptance Evidence
+
+Connect each material behavior change to an accepted outcome and a way to observe it. Relevant examples can cover normal input, absence, boundaries, failure, existing clients, and stored data. Reuse established acceptance criteria; ask only about material gaps, and do not generate a scenario matrix for trivial edits. Tests derived solely from the implementation can repeat its mistaken assumption.
+
+Correct results alone may not satisfy the task's quality needs. For affected paths, inspect relevant workload and security evidence: data volume, query/call frequency, payload size, concurrency, resource limits, input trust, authorization boundaries, and disclosure. Select only concerns actually exposed by the change. A loop query may need workload evidence; a new endpoint may need existing access-control tests. Simple naming or comment edits do not trigger a broad performance or security audit.
+
+Reuse confirmed safeguards and current facilities. Do not invent latency targets, limits, security policies, benchmarks, or configuration merely because this section lists them. Separate a demonstrated violation from a risk that needs measurement, and use the restriction-provenance and uncertainty rules below when the choice affects behavior. Verification may use focused tests, measured evidence, or bounded inspection; explain what it establishes.
+
+Delivery prerequisites and runtime feedback follow [task-modes.md](task-modes.md#lifecycle-handoffs). A regression check should reproduce the relevant condition and expected behavior without freezing unrelated implementation details. Use observed failures to improve verification, not as automatic authority to add a universal style rule.
+
 ## Map The Semantic Neighborhood
 
 The symbol named in the request is an investigation starting point, not automatically the full change boundary. Before proposing, explaining, judging, or editing existing behavior, follow only the paths needed to understand:

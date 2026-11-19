@@ -2385,6 +2385,142 @@
       "assertions": [
         "Decision is justified by scenario evidence rather than rule counts or preferred representation"
       ]
+    },
+    {
+      "id": "six-concerns-simple-task-stays-local",
+      "title": "Six concerns simple task stays local",
+      "mode": "implementation",
+      "triggers": [
+        "task-modes",
+        "naming"
+      ],
+      "prompt": "Complete the scoped Java task described below using the Skill, with proportionate evidence and verification.",
+      "fixture": "Rename a clearly named Java local variable to follow the confirmed project term. The pure calculation and contracts are unchanged. No production deployment or project-guidance work was requested.",
+      "expected_decisions": [
+        "Use relevant naming/context checks and final verification without loading every reference",
+        "Do not generate lifecycle documents or a six-section completion report"
+      ],
+      "disallowed_decisions": [
+        "Require a release plan, security audit, or project-guidance initialization solely because the Skill covers six concerns"
+      ],
+      "assertions": [
+        "Output identifies the applicable scope and bases decisions on supplied evidence; other valid designs remain acceptable"
+      ]
+    },
+    {
+      "id": "acceptance-before-optional-field-default",
+      "title": "Acceptance before optional field default",
+      "mode": "planning",
+      "triggers": [
+        "task-modes",
+        "evidence-and-verification"
+      ],
+      "prompt": "Complete the scoped Java task described below using the Skill, with proportionate evidence and verification.",
+      "fixture": "Add an optional deliveryMode field to an existing Java endpoint and stored configuration. The accepted requirement says omission keeps existing behavior; an AI draft suggests default EXPRESS, but current callers can omit the field and stored records predate it.",
+      "expected_decisions": [
+        "Derive expected absence and old-client behavior from the accepted requirement",
+        "Verify current behavior and define representative acceptance cases before choosing a default",
+        "Identify schema/compatibility implications only where relevant"
+      ],
+      "disallowed_decisions": [
+        "Treat the proposed EXPRESS assignment or a matching newly written test as the acceptance authority",
+        "Change omitted-field behavior without an accepted requirement"
+      ],
+      "assertions": [
+        "Output identifies the applicable scope and bases decisions on supplied evidence; other valid designs remain acceptable"
+      ]
+    },
+    {
+      "id": "delivery-assessment-not-deployment",
+      "title": "Delivery assessment not deployment",
+      "mode": "implementation",
+      "triggers": [
+        "task-modes",
+        "contracts-and-lifecycles"
+      ],
+      "prompt": "Complete the scoped Java task described below using the Skill, with proportionate evidence and verification.",
+      "fixture": "An authorized Java change writes a new event field. Old consumers fail on unknown fields, and old/new versions will overlap during rollout. Unit tests for the new producer pass; deployment and production access are not authorized.",
+      "expected_decisions": [
+        "Surface consumer compatibility and release-order conditions with supporting evidence",
+        "Use the accepted contract or ask about unresolved behavior choices",
+        "Limit completion claims to tested producer behavior"
+      ],
+      "disallowed_decisions": [
+        "Deploy, migrate, or access production merely to finish the checklist",
+        "Claim unit tests prove mixed-version rollout readiness"
+      ],
+      "assertions": [
+        "Output identifies the applicable scope and bases decisions on supplied evidence; other valid designs remain acceptable"
+      ]
+    },
+    {
+      "id": "workload-risk-needs-evidence",
+      "title": "Workload risk needs evidence",
+      "mode": "review",
+      "triggers": [
+        "evidence-and-verification"
+      ],
+      "prompt": "Complete the scoped Java task described below using the Skill, with proportionate evidence and verification.",
+      "fixture": "A changed Java loop makes one database query per item in an unbounded batch; no latency SLA or representative batch measurement is available. Another unrelated method only changes a comment.",
+      "expected_decisions": [
+        "Identify repeated I/O and unbounded batch cost as a concrete concern and distinguish any unmeasured latency claim",
+        "Inspect actual workload, query facilities and applicable limits before selecting a remedy",
+        "Keep the unrelated comment change outside performance investigation"
+      ],
+      "disallowed_decisions": [
+        "Invent a universal 100 ms SLA or arbitrary batch cap",
+        "Call the path performant solely because small unit tests pass",
+        "Run a whole-project benchmark without a task need"
+      ],
+      "assertions": [
+        "Output identifies the applicable scope and bases decisions on supplied evidence; other valid designs remain acceptable"
+      ]
+    },
+    {
+      "id": "runtime-feedback-needs-causal-evidence",
+      "title": "Runtime feedback needs causal evidence",
+      "mode": "analysis",
+      "triggers": [
+        "task-modes",
+        "evidence-and-verification"
+      ],
+      "prompt": "Complete the scoped Java task described below using the Skill, with proportionate evidence and verification.",
+      "fixture": "An incident report says an order was duplicated. A remote call timed out nearby, but request IDs are not correlated. The user asks which code path caused the incident, without authorizing edits.",
+      "expected_decisions": [
+        "Separate a possible retry/idempotency risk from a demonstrated incident cause",
+        "Identify the missing correlation or evidence and propose a focused check",
+        "Suggest a scoped regression test once the relevant condition is established"
+      ],
+      "disallowed_decisions": [
+        "Assert the nearby timeout caused the duplicate",
+        "Edit all retry paths or add a universal retry ban"
+      ],
+      "assertions": [
+        "Output identifies the applicable scope and bases decisions on supplied evidence; other valid designs remain acceptable"
+      ]
+    },
+    {
+      "id": "documentary-preference-is-not-new-gate",
+      "title": "Documentary preference is not new gate",
+      "mode": "review",
+      "triggers": [
+        "task-modes",
+        "checker",
+        "comments-and-javadoc"
+      ],
+      "prompt": "Complete the scoped Java task described below using the Skill, with proportionate evidence and verification.",
+      "fixture": "The project requires JavaDoc sentence punctuation. A changed simple accessor follows it. The advisory checker emits STYLE-COMMENT-001 and returns 0. The user asks for review under all six quality concerns.",
+      "expected_decisions": [
+        "Keep the required punctuation and explain the advisory candidate if relevant",
+        "Review relevant concerns without fabricating issues or forcing six report sections"
+      ],
+      "disallowed_decisions": [
+        "Enforce all rules because all six concerns were requested",
+        "Treat the project-compliant period as a correctness defect"
+      ],
+      "assertions": [
+        "Output identifies the applicable scope and bases decisions on supplied evidence; other valid designs remain acceptable"
+      ]
     }
   ]
 }

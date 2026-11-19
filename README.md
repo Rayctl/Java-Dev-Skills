@@ -1,48 +1,84 @@
 # Java-Dev-Skills
 
-个人维护的 Codex skills 仓库。每个 skill 使用独立目录，并在目录内提供面向使用者的 README 和面向 Codex 的 `SKILL.md`。Skill 入口保持精简，详细规则按任务触发后从 `references/` 渐进读取
+面向 Java 后端开发的三个 Codex Skills，分别帮助理解业务需求、设计与实现代码、安全协作 Git。可以按任务独立使用，也可以配合使用。
 
-## Skills
+## 该用哪个 Skill
 
-| Skill | 用途 |
+| 当前要做的事 | 调用入口 | 负责什么 |
+| --- | --- | --- |
+| 理解 PRD、梳理业务、确认关键决定 | `$prd-business-understanding` | 区分需求、现状、方案和未决事项，解释改动与业务的关系 |
+| 分析、规划、实现或审查具体 Java 代码 | `$java-code-design-and-development` | 检查依据、行为、可维护性、注释、排障和验证 |
+| 开始 Git 仓库开发，或进行提交、集成和推送 | `$git-safe-collaboration` | 确认开发目标与基线，保护已有修改和提交来源，核验操作目标 |
+
+详细说明：[PRD 业务理解与协作](prd-business-understanding/README.md) · [Java 代码设计与开发](java-code-design-and-development/README.md) · [Git 安全协作](git-safe-collaboration/README.md)
+
+## Java Skill 的六类能力
+
+| 检查方向 | 你可以期待它关注的问题 |
 | --- | --- |
-| [Git 安全协作](git-safe-collaboration/README.md) | 核对开发目标，安全更新，保留提交来源，管理已授权集成及推送前复核 |
-| [Java 代码设计与开发](java-code-design-and-development/README.md) | 使用 `$java-code-design-and-development`，在具体 Java 后端代码的规划、分析、实现和审查中应用质量规则 |
-| [PRD 业务理解与协作](prd-business-understanding/README.md) | 在 PRD 驱动的规划和实现中梳理旧行为、变化、兼容要求及关键决策依据 |
+| **改动依据** | 是否理解上下文，是否把猜测或偏好当成业务要求 |
+| **业务行为** | 数据、状态、默认值、失败和兼容行为是否一致 |
+| **理解与维护** | 名称、方法、参数和结构是否容易读懂、修改 |
+| **有效注释** | 是否说明必要原因与约束，是否与当前逻辑一致 |
+| **失败与排障** | 用户能否理解错误，开发能否凭记录定位问题 |
+| **执行可靠性与验证** | 事务、资源、缓存、重试等是否可靠，验证结论是否有证据 |
 
-PRD 驱动的规划或实现任务使用 prd-business-understanding，并按用户表达识别梳理或规划模式。先核对现状、契约和字段流转，区分事实、需求、方案和未决决策；排查疑点不自动扩大修改范围，需求更新只替换受影响决定。保留公共接口的兼容与失败行为，按职责整理内部实现，无须逐个审批方法或类。完成时映射场景、改动位置和验证结果；非 PRD 任务不触发该流程。
+六类能力保留在一个 Java Skill 中，详细规则按需读取。它们不是六个必跑流程，也不代表每项都由脚本自动检查。
 
-## 推荐流程
+已确认的业务契约、正确性和验证真实性必须满足；方法拆分、三元表达式和类型放置需要结合实际权衡；标点、空行、集合后缀等默认偏好服从项目和用户要求。另一种合理写法本身不构成缺陷。
 
-对 Git 仓库中的实质代码规划和修改任务，先由 `$git-safe-collaboration` 确认本地代码基线和远端新鲜度，再按语言加载对应质量 Skill；普通解释和固定提交的只读分析不要求开发新鲜度检查，明确的 Git 操作使用各自流程。检查本身只读；工作区干净且结果确认为 `BEHIND` 时，先告知用户，再按 Skill 已授权的策略尝试一次安全快进。无法确定提交关系时，先请求授权；工作区有修改时禁止更新，只按 Skill 的范围规则继续已有相关工作。缺少或删除远端目标、未完成 Git 操作及本地 Git 错误会停止开发。实际推送前还要独立核对指定的已有目标分支。
+Java Skill 的阶段流程、例子与完整规则索引见 [使用说明](java-code-design-and-development/README.md)。
 
-具体 Java 代码或实现方案的规划、分析、实现和审查使用 `$java-code-design-and-development`。规划先评估相关契约和风险；分析可以检查明确点名但尚未改动的代码并比较优化方案；实现与 diff 审查保持当前任务的变更范围。规划、分析和审查默认只读，不为采用另一种合理设计而报告问题。复杂行为按需加载事务、异常、远程调用和生命周期规则，简单任务不会扫描无关历史代码；未编辑源码时不机械运行检查器或完整测试套件。
+## 怎样配合工作
 
-## 项目提示
+1. **PRD 驱动的任务**先明确业务协作方式，复用已确认的需求和决定；非 PRD 任务无需经过这一步。
+2. **进入 Git 仓库的实质代码规划或修改前**，由 Git Skill 确认开发目标与基线，再应用语言规则。普通解释和固定提交的只读分析使用相应边界，不机械启动开发检查。
+3. **Java 规划与实现中**，先理解上下文和验收依据，复杂流程按阶段检查，简单任务保持局部。分析和审查默认只读，不自动变成重构。
+4. **交付前**核对相关测试与代码变更带来的配置、数据迁移或兼容条件。实际发布、审批及生产操作属于项目交付流程，Skill 检查通过不授予这些权限。
+5. **收到运行反馈时**区分现象与已证实原因，限定修复范围，补充有价值的回归验证。
 
-Java Skill 可选读取仓库本地的 `.codex/project-guidance.md`。该文件通过 Git 本地排除保存，只记录日志入口、工具库、远程包装方式和验证命令等稳定提示，不记录类清单、调用关系、字段含义或依赖版本。它只是参考信息，当前源码、构建配置、测试、正式文档和用户要求优先。项目提示按章节核实，不能把一次局部核实当成整个文件已更新。
+这些是协作关系，不要求所有任务走完五步。Git 的开发分支、比较目标、集成目标与推送目标分别核实；检查通过不自动授权提交、推送或历史改写，具体行为以 [Git Skill](git-safe-collaboration/SKILL.md) 为准。
 
-## Java 质量规则
-
-Java Skill 将规则分为两层：
-
-- 质量门禁：调用方可理解的职责、数据和状态语义、异常分类与恢复动作、事务和资源生命周期、第三方诊断信息、关键阶段意图和最终状态验证
-- 默认偏好：注释标点、方法间空行、控制语句大括号、集合变量后缀、三元表达式和换行方式
-
-默认偏好服从项目 formatter、`AGENTS.md`、正式文档和用户明确要求，可选偏好只作建议；违反已明确适用的风格要求时最高按 `P3` 处理
-
-Java 检查器默认输出提示，退出码 `0` 仍可能有候选项。只有通过 `--enforce-rule` 明确选择的规则命中才返回 `1`；原来要求全部规则的门禁可添加 `--enforce-rule all`。具体语义与迁移示例见 [检查器说明](java-code-design-and-development/references/checker.md)。
-
-## 评测与验证
-
-`java-code-design-and-development/evals/semantic-cases.json` 保存需要语义判断的代表性场景，`forward-evaluation-template.md` 用于在独立会话中记录有 Skill、无 Skill或旧版本的输出、断言证据、Token、耗时和实际加载的引用。JSON 结构通过不代表模型行为已经通过，仍需独立会话或人工评测
-
-各 Skill 可用 quick_validate.py 校验结构；Git 和 Java Skill 另有各自测试，Java Skill 还提供只读检查器，用于检查当前任务 Java 变更的确定性格式问题；PRD Skill 的语义评测目录可由专用脚本做结构校验，但模型行为仍需独立会话或人工评测
-
-## 安装
+## 安装与调用
 
 ```bash
 git clone git@github.com:Rayctl/Java-Dev-Skills.git
+cd Java-Dev-Skills
 ```
 
-进入目标 skill 目录的 README，按其中说明安装到 `~/.codex/skills`
+按需选择 Skill，依照各自 README 安装到 `~/.codex/skills`。例如在 PowerShell 中安装 Java Skill：
+
+```powershell
+Copy-Item -Recurse -Force ".\java-code-design-and-development" "$env:USERPROFILE\.codex\skills"
+```
+
+显式调用示例：
+
+```text
+使用 $prd-business-understanding 和我一起梳理这份 PRD
+使用 $java-code-design-and-development 分析这个方法，先不要修改
+使用 $git-safe-collaboration 核对这次推送的目标和提交
+```
+
+各 Skill 的 `agents/openai.yaml` 声明调用策略。需要稳定触发时，可在自己的 `AGENTS.md` 配置相应入口和适用范围；详细规则留在 Skill 中，避免多处复制。
+
+## 本地项目提示
+
+Java Skill 支持可选的 `.codex/project-guidance.md`，保存稳定的日志入口、工具查找线索和验证提示。它按章节核实，只是参考，不缓存类清单、调用关系、依赖版本或方法配方。
+
+创建和刷新需要授权，通过 Git 本地排除保存，不修改仓库 `.gitignore`。当前证据和正式规则优先，不能因核实一个章节就把整份提示标为最新。详见 [项目提示规则](java-code-design-and-development/references/project-guidance.md)。
+
+## 检查结果怎样理解
+
+- **单元测试**验证脚本的已覆盖行为。
+- **Skill 与语义场景结构校验**验证文件格式和结构，不证明模型做出了正确判断。
+- **语义评测**需要查看实际输出，判断是否符合业务证据和规则，并允许合理替代方案。
+- **Java 样式检查器**默认输出 `ADVISORY` 提示，退出码 `0` 仍可能包含候选项；显式 `--enforce-rule` 命中才阻断。旧全规则门禁可用 `--enforce-rule all`，详见 [检查器说明](java-code-design-and-development/references/checker.md)。
+
+检查结果应说明实际覆盖范围和缺口。测试数量、干净工作区或一次检查通过，都不能单独证明需求已经正确完成。
+
+## 仓库如何维护
+
+每个 Skill 的 README 面向使用者，`SKILL.md` 是执行入口，`references/` 保存按需读取的权威细则，`scripts/` 和 `tests/` 负责确定性能力，`evals/` 保存语义场景与评测方式（按各 Skill 实际需要提供）。
+
+新增规则先明确问题、适用范围、例外和验证方式；优先归入已有能力并合并重复。个人偏好不提升为通用缺陷，项目特例不扩散为所有 Java 仓库的要求。独立业务目标或明显不同的权限流程，才是考虑新增顶层 Skill 的依据。

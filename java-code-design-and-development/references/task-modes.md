@@ -10,6 +10,29 @@ Inspect enough callers, collaborators, data sources, configuration, contracts, a
 
 Apply reference rules to the concern under assessment, including unchanged target code. Instructions phrased as "before/after editing" govern actual edits; they do not authorize edits or require implementation artifacts in a read-only task. A reference's use of "changed" does not exclude the explicitly requested analysis target. Do not load references merely because a dependency elsewhere contains the same construct.
 
+## Lifecycle Handoffs
+
+The entry's six concerns describe what to inspect; task stages determine when and with what evidence. Stages can overlap or repeat. Do not force every request through all stages or create mandatory documents, approval rounds, or six-part reports.
+
+| Stage in the actual task | Relevant decision and evidence |
+| --- | --- |
+| Understand requirements | Identify accepted outcomes, allowed behavior changes, representative inputs/results, and material unknowns; distinguish current facts from intended behavior |
+| Choose an approach | Compare responsibilities, data/failure flow, existing capabilities, and tradeoffs; plan verification before committing to the design |
+| Implement | Use prechecks and meaningful stage checkpoints; preserve contracts and revalidate conclusions affected by new evidence |
+| Test and review | Compare actual normal, boundary, failure, and compatibility behavior with accepted examples; state what mocks or unavailable environments leave unverified |
+| Prepare delivery | For affected configuration, storage formats, schemas, APIs, or events, assess required defaults/migration, coexistence of versions, release order, and rollback compatibility |
+| Respond to runtime feedback | Separate symptoms, plausible paths, and demonstrated causes; make a scoped repair and add a useful regression check where practical |
+
+Use a concrete acceptance example when it resolves ambiguity, not a checklist detached from the task. For a new optional field, relevant cases may include absence, old stored data, and old callers. Do not invent desired values from the new implementation. A simple rename needs no release plan or performance investigation unless evidence shows a relevant contract.
+
+Delivery assessment identifies code-related prerequisites and risks; it never proves deployment readiness from unit tests alone or authorizes a migration, rollout, rollback, or production access. Report unresolved compatibility or data-conversion decisions when material. Actual release checks and approvals belong to the project's delivery workflow. In an ordinary code task, surface relevant conditions without expanding into release execution.
+
+PRD collaboration supplies accepted business decisions; Java quality checks their implementation and verification. Git collaboration governs repository operations. Reuse established decisions and handoffs rather than re-asking questions or rerunning workflows; missing optional Skills do not prevent ordinary scoped code analysis.
+
+Read [evidence-and-verification.md](evidence-and-verification.md#quality-requirements-and-acceptance-evidence) for acceptance, workload, or security concerns. Detailed ownership, naming, documentation, failure, and lifecycle rules retain their existing reference owners.
+
+The emphasis on small steps and feedback draws on [Fowler's refactoring guidance](https://refactoring.com/) and [The Pragmatic Programmer's public tips](https://pragprog.com/tips/). Stage names and Skill boundaries here are local organization choices, not a claim that those sources prescribe this workflow.
+
 ## Planning
 
 Before settling on an implementation approach, check the proposed responsibility, caller-visible contract, data flow, meaningful side effects, validation and failure order, diagnostics, and applicable lifecycle ownership. Trace a representative case for multi-stage or boundary changes. Use actual evidence for existing paths; label proposed paths, assumptions, and missing evidence instead of inventing method names or guarantees.
