@@ -35,7 +35,7 @@ These examples are not substitutions or a forbidden-word list. If reconciliation
 
 Keep established business terms, Java and technical vocabulary such as `serialize`, `rollback`, and `commit`, and required interface or third-party signatures when they carry precise shared meaning. Check comparable current names before inventing a simpler synonym; simplify the surrounding action when possible. Do not replace a precise term with `process` or `handle` merely because those words are familiar. An unfamiliar-to-one-reader term is not automatically a defect; explain the concrete reading problem and an equally accurate alternative.
 
-This is a readability preference subordinate to explicit user and formal project requirements. Mere vocabulary difficulty is at most `P3`; a misleading name that hides a caller-relevant contract follows the impact-based naming severity below. Do not add a dictionary or keyword-based Python rule.
+This is a readability preference subordinate to explicit user and formal project requirements. Optional vocabulary alternatives are suggestions; a demonstrated local comprehension problem is at most `P3`; a misleading name that hides a caller-relevant contract follows the impact-based naming severity below. Do not add a dictionary or keyword-based Python rule.
 
 ## Generic Actions
 
@@ -56,23 +56,20 @@ Apply the action to the actual contract:
 - mutation and orchestration names identify their target and must not disguise persistence, remote calls, transactions, compensation, or degradation as ordinary calculation
 - a shape or quantity suffix does not make a name specific: `saveBatch`, `buildData`, and `processList` remain unclear
 
-## Avoid Normalize
+## Name The Actual Transformation
 
-Do not introduce application-defined identifiers based on `normalize`, `normalized`, or `normalizer`. These words claim that a value becomes normal without revealing the rule, changed fields, defaults, ordering, filtering, or resulting state.
-
-Name the observable operation or result instead:
+Prefer an observable operation or named target when `normalize` would leave the rule unclear:
 
 ```text
 normalizeSystemContext -> fillMissingSystemIdentity
 normalizeHeaderNames   -> convertHeaderNamesToLowerCase
 normalizeCodes         -> trimAndDeduplicateCodes
-normalizePath          -> removeDuplicatePathSeparators
-normalizedConfig       -> configWithResolvedDefaults
+normalizedConfig      -> configWithResolvedDefaults
 ```
 
-Do not merely replace `normalize` with `standardize`, `canonicalize`, `sanitize`, `adjust`, or `process`; those words require the same concrete operation or named contract. Retain normalization terminology only when a framework or external signature requires it, or when a named technical standard defines normalization as the actual operation, such as Unicode NFC or URI normalization. Calls to third-party APIs keep their published names.
+These are conditional examples, not a forbidden-word list. `normalize`, `Assembler`, and other technical words may remain when they accurately name an established project concept or technical contract and the intended maintainers understand them. Prefer an equally accurate familiar expression; do not rename a precise operation to a misleading simpler verb. Explain necessary domain vocabulary where readers need it.
 
-Report ambiguous normalization vocabulary as `P2` when it hides defaults, security filtering, compatibility behavior, state mutation, or another caller-relevant contract; otherwise use `P3` for local understanding cost.
+Do not replace an unclear word with another broad synonym such as `adjust` or `process`. Report the missing meaning and its consequence, not the presence of a word. Hidden defaults, security filtering, compatibility behavior, or state mutation may be P2; an optional vocabulary preference alone is not a defect.
 
 ## State And Collection Names
 

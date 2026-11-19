@@ -22,9 +22,11 @@ def load_checker():
 
 
 class CheckerTestCase(unittest.TestCase):
-    def run_checker(self, *args, cwd=None):
+    def run_checker(self, *args, cwd=None, enforce_legacy=True):
+        # Existing detection/scope regressions exercise explicit legacy enforcement.
+        policy = ["--enforce-rule", "all"] if enforce_legacy else []
         return subprocess.run(
-            [sys.executable, str(SCRIPT), *map(str, args)],
+            [sys.executable, str(SCRIPT), *policy, *map(str, args)],
             cwd=cwd,
             text=True,
             encoding="utf-8",
@@ -59,6 +61,78 @@ class CheckerTestCase(unittest.TestCase):
         self.git(repo, "config", "user.email", "checker@example.test")
         self.git(repo, "config", "user.name", "Checker Tests")
         return temporary, repo
+
+
+class EnforcementPolicyTests(CheckerTestCase):
+    def test_default_reports_without_blocking_or_changing_sources(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = self.write(temporary, "Demo.java", "class Demo { // Explanation.\n}\n")
+            before = path.read_bytes()
+            result = self.run_checker(path, enforce_legacy=False)
+            self.assertEqual(0, result.returncode, result)
+            self.assertIn("[ADVISORY]", result.stdout)
+            self.assertIn("0 enforced, 1 advisory", result.stderr)
+            self.assertEqual(before, path.read_bytes())
+
+    def test_enforce_only_selected_rules_and_keep_other_candidates(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = self.write(temporary, "Demo.java", "class Demo { // Explanation.\n void run(boolean ready) { if (ready) return; }\n}\n")
+            result = self.run_checker(path, "--enforce-rule", "STYLE-BRACE-001", enforce_legacy=False)
+            self.assertEqual(1, result.returncode, result)
+            self.assertIn("STYLE-BRACE-001: [ENFORCED]", result.stdout)
+            self.assertIn("STYLE-COMMENT-001: [ADVISORY]", result.stdout)
+            advisory = self.run_checker(path, "--enforce-rule", "STYLE-METHOD-001", enforce_legacy=False)
+            self.assertEqual(0, advisory.returncode, advisory)
+            self.assertNotIn("[ENFORCED]", advisory.stdout)
+
+    def test_repeated_rule_selection_is_deduplicated(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = self.write(temporary, "Demo.java", "class Demo { // Explanation.\n void run(boolean ready) { if (ready) return; }\n}\n")
+            result = self.run_checker(path, "--enforce-rule", "STYLE-COMMENT-001", "--enforce-rule", "STYLE-BRACE-001", "--enforce-rule", "STYLE-COMMENT-001", enforce_legacy=False)
+            self.assertEqual(1, result.returncode, result)
+            self.assertIn("2 enforced, 0 advisory", result.stderr)
+
+    def test_unknown_rule_and_missing_input_are_errors_in_advisory_mode(self):
+        unknown = self.run_checker("--enforce-rule", "STYLE-TYPO-001", enforce_legacy=False)
+        self.assertEqual(2, unknown.returncode, unknown)
+        missing = self.run_checker("missing.java", enforce_legacy=False)
+        self.assertEqual(2, missing.returncode, missing)
+
+    def test_clear_guards_are_advisory_unless_count_rule_explicitly_enforced(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = self.write(temporary, "Guards.java", """
+                class Guards {
+                    void validate(String userId, String orderId, String payload) {
+                        if (userId == null) { throw new IllegalArgumentException("userId required"); }
+                        if (orderId == null) { throw new IllegalArgumentException("orderId required"); }
+                        if (payload == null) { throw new IllegalArgumentException("payload required"); }
+                    }
+                }
+            """)
+            result = self.run_checker(path, enforce_legacy=False)
+            self.assertEqual(0, result.returncode, result)
+            self.assertIn("STYLE-GUARD-001: [ADVISORY]", result.stdout)
+            strict = self.run_checker(path, "--enforce-rule", "STYLE-GUARD-001", enforce_legacy=False)
+            self.assertEqual(1, strict.returncode, strict)
+
+    def test_policy_preserves_changed_range_and_exclusion_scope(self):
+        temporary, repo = self.make_repo()
+        with temporary:
+            tracked = self.write(repo, "Tracked.java", "class Tracked { // Existing.\n}\n")
+            self.git(repo, "add", ".")
+            self.git(repo, "commit", "-m", "baseline")
+            added = self.write(repo, "Added.java", "class Added { // New.\n}\n")
+            before = self.git(repo, "status", "--porcelain")
+            for extra, code in [((), 0), (("--enforce-rule", "STYLE-COMMENT-001"), 1)]:
+                result = self.run_checker("--changed", "--repo", repo, *extra, enforce_legacy=False)
+                self.assertEqual(code, result.returncode, result)
+                self.assertIn(str(added), result.stdout)
+                self.assertNotIn(str(tracked), result.stdout)
+                excluded = self.run_checker("--changed", "--repo", repo, "--exclude", added, *extra, enforce_legacy=False)
+                self.assertEqual(0, excluded.returncode, excluded)
+                exact = self.run_checker("--line-range", str(added) + ":2-2", *extra, enforce_legacy=False)
+                self.assertEqual(0, exact.returncode, exact)
+            self.assertEqual(before, self.git(repo, "status", "--porcelain"))
 
 
 class FullFileRuleTests(CheckerTestCase):

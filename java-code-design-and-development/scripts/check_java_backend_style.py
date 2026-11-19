@@ -22,6 +22,12 @@ CONTROL_WORDS = {
     "while",
 }
 
+# Detection is advisory unless the caller explicitly selects binding rules.
+RULE_IDS = (
+    "STYLE-COMMENT-001", "STYLE-METHOD-001", "STYLE-CATCH-001",
+    "STYLE-GUARD-001", "STYLE-INTENT-001", "STYLE-BRACE-001",
+)
+
 CLASS_PATTERN = re.compile(r"\b(class|interface|enum|record)\b")
 IDENTIFIER_PATTERN = re.compile(r"[A-Za-z_$][A-Za-z0-9_$]*\s*$")
 ANNOTATION_TOKEN_PATTERN = re.compile(r"@(?:[A-Za-z_$][A-Za-z0-9_$.]*)")
@@ -1254,6 +1260,17 @@ def build_parser():
         ),
     )
     parser.add_argument(
+        "--enforce-rule",
+        action="append",
+        default=[],
+        choices=(*RULE_IDS, "all"),
+        help=(
+            "return exit 1 for findings of this explicitly binding rule; repeatable. "
+            "Default: report advisory findings with exit 0. 'all' restores legacy "
+            "fail-on-any-finding behavior; no repository policy is inferred."
+        ),
+    )
+    parser.add_argument(
         "--changed",
         action="store_true",
         help="inspect added/modified current-source lines relative to HEAD or --base",
@@ -1297,6 +1314,7 @@ def build_parser():
 def main(argv=None):
     parser = build_parser()
     args = parser.parse_args(argv)
+    enforced_rules = set(RULE_IDS if "all" in args.enforce_rule else args.enforce_rule)
 
     if args.changed and args.line_range:
         parser.error("--changed and --line-range cannot be combined")
@@ -1342,19 +1360,26 @@ def main(argv=None):
 
     for path, finding in findings:
         print(
-            "%s:%d: %s: %s | %s"
+            "%s:%d: %s: [%s] %s | %s"
             % (
                 path.resolve(),
                 finding.line,
                 finding.rule,
+                "ENFORCED" if finding.rule in enforced_rules else "ADVISORY",
                 finding.message,
                 finding.content,
             )
         )
 
     if findings:
-        print("Found %d style violation(s)" % len(findings), file=sys.stderr)
-        return 1
+        enforced_count = sum(finding.rule in enforced_rules for _, finding in findings)
+        print(
+            "Found %d candidate(s): %d enforced, %d advisory. "
+            "Review against project rules and semantics; this is not a correctness verdict."
+            % (len(findings), enforced_count, len(findings) - enforced_count),
+            file=sys.stderr,
+        )
+        return 1 if enforced_count else 0
     print("No deterministic style violations found in %d Java file(s)" % len(scopes))
     return 0
 

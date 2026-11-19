@@ -33,15 +33,15 @@ A useful remote-call record lets an operator correlate the operation and determi
 
 Use the repository's logging framework, event format, level conventions, and diagnostic owner. Avoid layered catch-log-throw records for the same failure because they obscure incident counts and ownership.
 
-Do not universally require or prohibit complete URLs, request and response bodies, files, credentials, tokens, or signatures. Decide their inclusion from evidence:
+Treat payload completeness and sensitive-field handling as separate decisions. A confirmed project convention may require complete business request/response payloads for support diagnosis. Follow it through the existing diagnostic owner; do not silently reduce it to a summary or assume that every project shares it.
 
-- explicit repository logging, privacy, security, and audit rules
-- available masking, access control, environment separation, retention, and production switches
-- payload size, binary or file content, and truncation behavior
-- whether the value materially improves reproduction or incident diagnosis
-- duplicate logs already emitted by the client or infrastructure
+Complete business payloads do not by themselves authorize raw passwords, API keys, access tokens, replayable signatures, or credential-bearing URLs. Check the relevant security and logging contract for these fields separately. Prefer omission, masking, or a safe correlation value for credentials; an exceptional capture needs a specific authorized scope and controls consistent with applicable requirements. A historic raw log or general request for full payloads is insufficient evidence for that exception.
 
-When the repository does not make the policy clear, pause before adding or broadening logs. Show the concrete fields and risks, recommend avoiding raw credential or replayable values, and ask the user to choose among relevant scopes such as selected fields, a masked full payload, an original full payload, or failure-only logging. A full-payload option must also settle size limits, binary and file handling, duplication, production enablement, access, and masking. Do not silently enable wire logging or expand an existing production log.
+Before adding or broadening capture, resolve the relevant scope from repository rules and current user decisions: business fields and personal data, credential handling, production level/switches, access and retention, size/truncation, binary/files, and duplication. Do not invent one universal payload limit or masking recipe. Ask only about unresolved choices that change disclosure or diagnostic coverage; reuse already confirmed policy rather than asking for each call. Scope an unresolved choice to the affected logging work.
+
+When full business logging is confirmed but credential handling is unclear, explain that specific gap and offer a recommendation. Do not collapse it into "all fields or no logging" or silently remove required diagnostic evidence. With user approval, stable project guidance may record the policy source and lookup hints under its existing metadata rules; it does not establish authority by itself.
+
+[OWASP logging guidance](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html#data-to-exclude) recommends special handling for credentials and other sensitive data while preserving useful diagnostics. Apply its rationale to the actual content and project controls; it is not a universal ban on complete business payloads.
 
 ## Preserve Failure Categories
 

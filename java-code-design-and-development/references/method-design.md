@@ -6,7 +6,7 @@ Read when the scoped code or proposed implementation involves private helpers, c
 
 For every in-scope private helper and every private field or constant extracted only to reuse a compact literal or expression, mentally replace its uses with the underlying body or value. Prefer the form that makes the current branch understandable with less navigation and exposes the evidence needed to verify behavior.
 
-Write compact logic or values directly at their use sites, regardless of use count, when doing so makes the caller easier to understand and reveals useful details such as:
+Compare compact logic or values at their use sites with a named abstraction. Prefer direct code when it makes the caller easier to understand without scattering one jointly maintained rule, and reveals useful details such as:
 
 - null handling, field sources, or the concrete values being compared
 - the actual predicate, component, remote client, or repository being called
@@ -15,7 +15,7 @@ Write compact logic or values directly at their use sites, regardless of use cou
 - a single guard followed by a simple assignment or direct call
 - local caller values that extraction merely turns into a long parameter list
 
-This applies even when the helper or value has three, eight, or more use sites. Repetition, DRY, a clear name, JavaDoc, centralized wording, a stable-policy label, fewer lines, or reuse count do not independently justify extraction. A long constant name summarizes a message but does not let a reader verify its exact wording, error category, or recovery advice. Allow small local duplication when it preserves branch evidence and reduces jumping.
+Neither three nor eight uses decides the outcome. Compare navigation and exposed branch evidence with the cost of changing the same rule consistently across callers. Reuse count, a clear name, or a stable-policy label alone is insufficient, but an actual shared rule or governed message is a valid reason to centralize. Allow small incidental duplication; do not duplicate a jointly maintained contract merely to avoid a jump. Equal text can represent different rules and must not couple unrelated causes.
 
 Body length and expression count are not deletion criteria either. Compare the actual caller in both forms: does the helper let the reader make the next decision using a meaningful concept, or merely force a jump to recover field sources, null handling, or an already named operation? Apply the short-rule criteria below before expanding a composed predicate.
 
@@ -37,11 +37,11 @@ private static final String FIELD_DEFINITION_MISMATCH_MESSAGE =
         "字段定义已更新，请刷新页面后重新配置";
 ```
 
-At each call site, the expanded predicate shows the null rule and source fields, while the expanded exception or message literal shows the exact failure category and caller message. A private human-readable message constant created only for reuse should normally be replaced by its literal at every throw site.
+At each call site, the expanded predicate shows the null rule and source fields, while the expanded exception or message literal shows the exact failure category and caller message. Compare a private message constant with local wording; retain it when callers share a real error contract whose coordinated maintenance outweighs the extra navigation.
 
 ## When A Helper May Remain
 
-Retain a helper only when its separate boundary materially lowers call-site cognitive load or an external contract requires the method identity. Valid reasons include:
+Retain a helper when it makes the complete path easier to understand, centralizes a genuinely shared rule, or satisfies a required method identity. Consider maintenance across callers as well as local reading. Valid reasons include:
 
 - hiding non-trivial branching, iteration, an algorithm, or low-level mechanics
 - combining low-level checks into a useful business or protocol concept, including a short predicate, under the criteria below
@@ -49,9 +49,9 @@ Retain a helper only when its separate boundary materially lowers call-site cogn
 - classifying failures from context, converting exceptions while retaining the cause, or adding useful diagnostic data
 - satisfying a framework callback, annotation, reflection, serialization, or generated contract
 
-Retain a field or constant when the value has an independent identity or externally governed contract, such as a protocol or persistence identifier, a framework-required compile-time constant, a localization key, an externally stable public identifier, or a structured template with real formatting ownership. Stable error-code constants and enum members remain valid semantic categories; this rule targets human-readable message literals extracted only for local reuse.
+Retain a field or constant when the value has an independent identity or externally governed contract, such as a protocol or persistence identifier, a framework-required compile-time constant, a localization key, an externally stable public identifier, or a structured template with real formatting ownership. Stable error-code constants and enum members remain valid semantic categories. A shared message catalog or factory can also own a consistent error contract; verify that callers really share the category, reason, and recovery action.
 
-A fixed exception code and message do not constitute a dynamic failure policy. A wrapper around one persistence or remote call does not own a meaningful boundary unless it also enforces transaction, ordering, compensation, lifecycle, or failure semantics.
+A fixed exception code and message do not constitute a dynamic failure policy, but a demonstrated shared error contract can justify a factory or constant. A wrapper around one persistence or remote call does not own a meaningful boundary unless it also enforces transaction, ordering, compensation, lifecycle, or failure semantics.
 
 Before removing a helper, exclude framework, annotation, reflection, serialization, and other implicit callers. Do not delete a method based only on textual reference counts.
 
@@ -128,11 +128,11 @@ Keep readable explicit entry calls when they already reveal the processed region
 
 When eliminating traversal flags, verify ancestor versus current-node behavior, subtree and array boundaries, cleanup, validation order, null semantics, and error category and message. Equivalent final output alone does not prove equivalent validation or failure behavior.
 
-## Default To Fewer Nested Types
+## Choose Type Placement By Cohesion
 
-Apply this preference to new or edited non-static inner classes, static nested classes, local classes, and nested enums. First consider direct local values or an existing type. A type with an independent responsibility normally belongs in a separate file with the minimum visibility needed by its callers; moving it out must not make it a public API by default. Do not replace a tiny temporary carrier with a separate file merely to satisfy this preference.
+Apply this comparison to new or edited non-static inner classes, static nested classes, local classes, and nested enums. First consider direct local values or an existing type. Compare nesting a private implementation detail with a separate file; an independently used responsibility normally belongs in a separate file with the minimum visibility needed by its callers; moving it out must not make it a public API by default. Do not replace a tiny temporary carrier with a separate file merely to satisfy this preference.
 
-Nesting may remain when the type truly belongs to its enclosing implementation and reading the non-trivial behavior together reduces navigation, or when a meaningful Builder or a framework contract requires that identity. A one-place flag bag, fewer files, or access to outer fields alone does not justify nesting. If outer-instance access is unnecessary and the language permits it, prefer a static nested type to avoid an implicit enclosing-instance reference.
+Nesting may remain when the type truly belongs to its enclosing implementation and reading the non-trivial behavior together reduces navigation, or when a meaningful Builder or a framework contract requires that identity. Neither fewer files nor fewer nested types proves readability. A small cohesive private value may be nested when that keeps its owner understandable; an unrelated flag bag remains a poor abstraction in either location. If outer-instance access is unnecessary and the language permits it, prefer a static nested type to avoid an implicit enclosing-instance reference.
 
 Ordinary tests and mocks do not trigger a type hierarchy rewrite; framework-required nested tests can remain. This is a default preference subordinate to formal project conventions and explicit user rules, not a categorical ban.
 
@@ -154,8 +154,8 @@ Report a needless extraction as `P2` when it conceals ordering, side effects, fa
 
 Assign a finding only to an evidenced rule violation or concrete readability or behavior problem. Another valid representation or a user-requested improvement alone is not a `P2` or `P3` issue. Clear fixed path strings can remain without a required typed contract or demonstrated defect; an enum may be discussed as an option without grading the existing form. This does not exempt opaque flags, hidden semantics, or applicable explicit/default rules.
 
-Use `P3` for unclear parameter presentation or unjustified nesting that only affects reading. A preference-only nesting issue is at most `P3`; wrong flag semantics, changed validation order, unintended object retention, or other demonstrated behavior and lifecycle risks follow impact-based severity.
+Use `P3` for unclear parameter presentation or unjustified nesting that only affects reading. Nesting preferences alone are optional suggestions; applicable style violations are at most `P3`; wrong flag semantics, changed validation order, unintended object retention, or other demonstrated behavior and lifecycle risks follow impact-based severity.
 
 ## Sources And Local Choices
 
-Fowler's [Inline Function](https://refactoring.com/catalog/inlineFunction.html) and [Extract Function](https://refactoring.com/catalog/extractFunction.html) are complementary choices, not a requirement to minimize every method. [Introduce Parameter Object](https://refactoring.com/catalog/introduceParameterObject.html) illustrates grouping values with a shared meaning. Apply the caller and behavior tests above instead of a numeric size or argument limit. This Skill's preference for showing compact delegation and fixed exception wording at use sites remains a local choice; it is not attributed to a universal DRY rule. Source links are background, not a requirement to browse during implementation
+Fowler's [Inline Function](https://refactoring.com/catalog/inlineFunction.html) and [Extract Function](https://refactoring.com/catalog/extractFunction.html) are complementary choices, not a requirement to minimize every method. [Introduce Parameter Object](https://refactoring.com/catalog/introduceParameterObject.html) illustrates grouping values with a shared meaning. Apply the caller and behavior tests above instead of a numeric size or argument limit. The [Pragmatic Programmer DRY excerpt](https://media.pragprog.com/titles/tpp20/dry.pdf) distinguishes duplicated knowledge from coincidentally similar code. Use that distinction with both reading and change costs; showing compact delegation or fixed wording locally is a preference, not a ban on useful shared contracts. Source links are background, not a requirement to browse during implementation

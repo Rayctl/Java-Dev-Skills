@@ -9,12 +9,13 @@
       "fixture": "A private helper used three times only returns field != null && Catalog.isReference(field.getCode(), field.getPath()). The changed call sites rely on its null behavior.",
       "expected_decisions": [
         "Compare the helper with the expression written at each changed call site",
-        "Recommend the direct expression when it keeps the branch compact and exposes null and field semantics",
+        "Compare direct expression clarity with shared-rule maintenance; prefer direct code if no meaningful shared contract is lost",
         "Treat reuse count as duplication cost rather than proof that the helper should remain"
       ],
       "disallowed_decisions": [
         "Keep the helper solely because it has multiple callers",
-        "Require a JavaDoc as the primary fix for the hidden predicate"
+        "Require a JavaDoc as the primary fix for the hidden predicate",
+        "Require expansion regardless of coordinated maintenance cost"
       ]
     },
     {
@@ -205,15 +206,13 @@
     },
     {
       "id": "comment-required-javadoc-rewrite",
-      "title": "Clear method names do not remove independent-action JavaDoc",
+      "title": "Audit timing and diagnostic purpose justify useful JavaDoc",
       "mode": "implementation",
-      "triggers": [
-        "comments-and-javadoc"
-      ],
+      "triggers": ["comments-and-javadoc"],
       "prompt": "改进方法注释的文案，保持行为不变",
       "fixture": "/**\n * 本方法用于捕获最终请求报文并进行相关处理\n */\nprivate void captureFinalRequestPayload(HttpRequest request) {\n    auditContext.setPayload(request.getEncodedBody());\n}\nThis independent audit action captures the encoded payload after request mapping and encoding, for later failure diagnosis. It does not send the request. Repository documentation tags follow the normal existing style.",
       "expected_decisions": [
-        "Keep JavaDoc for the independent action and state the capture timing and diagnostic use plainly",
+        "Keep useful JavaDoc for the hidden capture timing and diagnostic use, not merely because the action is independent",
         "Avoid restating only the method name or filling unrelated parameter and exception boilerplate"
       ],
       "disallowed_decisions": [
@@ -224,19 +223,17 @@
     },
     {
       "id": "comment-required-guard-rewrite",
-      "title": "Generic required guard documentation is rewritten",
+      "title": "Guard comments are evaluated by missing information",
       "mode": "review",
-      "triggers": [
-        "comments-and-javadoc"
-      ],
+      "triggers": ["comments-and-javadoc"],
       "prompt": "检查入口注释是否需要优化",
       "fixture": "// 进行相关检查\nif (request == null) { throw new InvalidRequestException(\"request missing\"); }\nif (config == null) { throw new ConfigurationException(\"configuration missing\"); }\nif (!config.isEnabled()) { throw new ConfigurationException(\"configuration disabled\"); }\ninvokeChannel(request, config);\nThe guard cluster separates missing caller input from unavailable channel configuration before any external call.",
       "expected_decisions": [
-        "Replace the generic guard comment with the request/configuration boundary and pre-call purpose",
-        "Keep one leading guard-cluster comment and the distinct error categories"
+        "Preserve distinct caller-input and configuration error categories and pre-call ordering",
+        "Explain the shared boundary if otherwise unclear; removing generic prose is acceptable when the code already makes it evident"
       ],
       "disallowed_decisions": [
-        "Delete the leading comment without replacement using the deletion test",
+        "Require a leading comment solely because three guards exist",
         "Add a comment for every if",
         "Merge request and configuration errors into a generic parameter category"
       ]
@@ -330,9 +327,9 @@
       "title": "Clear method name does not remove an independent action contract",
       "mode": "review",
       "triggers": ["comments-and-javadoc"],
-      "fixture": "A private method named captureFinalHttpRequestPayload performs one linear independent lifecycle action and has no JavaDoc.",
+      "fixture": "A private captureFinalHttpRequestPayload method stores the encoded request bytes for later failure diagnosis after all mappings and before sending; no JavaDoc or other contract explains this timing to its callers.",
       "expected_decisions": [
-        "Require JavaDoc because the method owns an independent processing or lifecycle action",
+        "Document the hidden final-encoding capture time and diagnostic use because callers need that contract",
         "Describe the contract information not visible from the name instead of restating the method name"
       ],
       "disallowed_decisions": [
@@ -1063,15 +1060,13 @@
       "id": "dense-null-allocation-ternary-after-checker",
       "title": "Passing deterministic checks does not exempt dense ternaries",
       "mode": "review",
-      "triggers": [
-        "control-flow"
-      ],
+      "triggers": ["control-flow"],
       "prompt": "自动样式检查通过了，再看一下这段表达式",
       "fixture": "The changed line is String[] nameParts = qualifiedName == null ? new String[0] : qualifiedName.split(\":\", -1);. No stronger repository formatter or instruction prescribes this ternary. The deterministic style checker reports no violations.",
       "expected_decisions": [
-        "Apply the existing readability rule to null handling combined with allocation and a call",
-        "Prefer a braced if retaining the empty-array null result and split limit -1",
-        "Use at most P3 for local reading cost without evidence of a behavioral defect"
+        "Compare the ternary with a braced if by full-path readability; either is valid with a concrete explanation",
+        "Preserve the empty-array null result and split limit -1",
+        "Treat an equally readable alternative as optional; assign P3 only to a concrete local problem or applicable style violation"
       ],
       "disallowed_decisions": [
         "Accept the line solely because it fits one line or the checker passed",
@@ -1387,10 +1382,21 @@
       "mode": "review",
       "triggers": ["comments-and-javadoc", "control-flow", "checker"],
       "prompt": "项目要求 JavaDoc 以句号结尾，自动检查报错了，应该改吗？",
-      "fixture": "The formal repository documentation standard requires full stops in JavaDoc, and its formatter requires two blank lines between methods. Changed code follows both. The deterministic checker returns exit 1 with STYLE-COMMENT-001 and STYLE-METHOD-001. There is no contrary explicit user instruction or demonstrated behavior defect.",
-      "expected_decisions": ["Keep the formal project formatting rather than rewriting compliant code to satisfy Skill defaults", "Report the raw exit 1 and explain that these preference diagnostics are overridden", "Do not assign a preference-only finding to the compliant code"],
-      "disallowed_decisions": ["Claim the checker returned exit 0", "Treat every checker diagnostic as a mandatory defect", "Remove required JavaDoc punctuation or collapse required spacing"],
-      "assertions": ["The reviewed disposition distinguishes raw checker output from actual project violations"]
+      "fixture": "The formal repository documentation standard requires full stops in JavaDoc, and its formatter requires two blank lines between methods. Changed code follows both. An existing CI invocation uses --enforce-rule all and returns exit 1 with STYLE-COMMENT-001 and STYLE-METHOD-001. There is no contrary explicit user instruction or demonstrated behavior defect.",
+      "expected_decisions": [
+        "Keep the formal project formatting rather than rewriting compliant code to satisfy Skill defaults",
+        "Report the raw exit 1 and explain that these preference diagnostics are overridden",
+        "Do not assign a preference-only finding to the compliant code",
+        "Explain migration to advisory default or explicitly selected applicable rules; do not silently edit CI"
+      ],
+      "disallowed_decisions": [
+        "Claim the checker returned exit 0",
+        "Treat every checker diagnostic as a mandatory defect",
+        "Remove required JavaDoc punctuation or collapse required spacing"
+      ],
+      "assertions": [
+        "The reviewed disposition distinguishes raw checker output from actual project violations"
+      ]
     },
     {
       "id": "redundant-recursion-entrance-prefers-one-method",
@@ -2173,6 +2179,212 @@
       "fixture": "The plan introduces a mandatory operationCode not described in the caller's UI or contract. Existing selected API data may already supply the needed value but has not been traced. Export returns a filename and JSON content inside the normal response envelope, not a binary stream. Compilation passes; no agreed code mapping or new input collection is established.",
       "expected_decisions": ["Trace the required value from the existing selection through the provider contract before declaring the new input necessary", "State the unresolved contract explicitly and avoid claiming full caller readiness from compilation", "Describe the actual export envelope and how the caller uses filename/content", "Prefer an existing supported input path before proposing another required field or configuration"],
       "disallowed_decisions": ["Declare the interface ready solely because it compiles", "Document a binary download response that the endpoint does not return", "Invent an identifier mapping from different field names", "Ask the user to select only between two unverified new mechanisms"]
+    },
+    {
+      "id": "obvious-guards-need-no-filler",
+      "title": "Obvious guards need no filler",
+      "mode": "review",
+      "triggers": [
+        "comments-and-javadoc"
+      ],
+      "fixture": "Review void validate(String userId, String orderId, String payload), which has three independent null guards throwing specific required-field errors and no other behavior. No project rule requires comments.",
+      "expected_decisions": [
+        "Allow no leading comment when no hidden boundary exists",
+        "Treat STYLE-GUARD-001 as a review prompt"
+      ],
+      "disallowed_decisions": [
+        "Require a comment based only on three guards",
+        "Invent an ordering guarantee"
+      ],
+      "prompt": "Assess the supplied Java scenario under the Skill; explain any concrete finding and preserve valid alternatives.",
+      "assertions": [
+        "Decision is justified by scenario evidence rather than rule counts or preferred representation"
+      ]
+    },
+    {
+      "id": "self-explanatory-action-without-javadoc",
+      "title": "Self explanatory action without javadoc",
+      "mode": "review",
+      "triggers": [
+        "comments-and-javadoc"
+      ],
+      "fixture": "private String buildDisplayName(String firstName, String lastName) { return firstName + \" \" + lastName; }. Both inputs are already validated non-null; no project documentation obligation applies.",
+      "expected_decisions": [
+        "Do not require JavaDoc that only repeats the expression",
+        "Retain documentation if a real caller-needed rule emerges"
+      ],
+      "disallowed_decisions": [
+        "Assign P3 solely for absent JavaDoc"
+      ],
+      "prompt": "Assess the supplied Java scenario under the Skill; explain any concrete finding and preserve valid alternatives.",
+      "assertions": [
+        "Decision is justified by scenario evidence rather than rule counts or preferred representation"
+      ]
+    },
+    {
+      "id": "shared-error-contract-may-remain",
+      "title": "Shared error contract may remain",
+      "mode": "review",
+      "triggers": [
+        "method-design"
+      ],
+      "fixture": "Eight endpoints use invalidAccountState() returning a fixed error code/message. The documented API contract requires these endpoints to evolve that error together; the helper names the exact shared category and callers show the rejected state.",
+      "expected_decisions": [
+        "Permit the factory or catalog as one maintained contract",
+        "Check that all callers share reason, category and recovery"
+      ],
+      "disallowed_decisions": [
+        "Require eight copies solely because the factory is two lines"
+      ],
+      "prompt": "Assess the supplied Java scenario under the Skill; explain any concrete finding and preserve valid alternatives.",
+      "assertions": [
+        "Decision is justified by scenario evidence rather than rule counts or preferred representation"
+      ]
+    },
+    {
+      "id": "equal-messages-different-rules",
+      "title": "Equal messages different rules",
+      "mode": "review",
+      "triggers": [
+        "method-design"
+      ],
+      "fixture": "Age validation and parcel-count validation both currently report \"must be positive\" but have independent product owners and change separately.",
+      "expected_decisions": [
+        "Avoid coupling the two policies merely because text matches",
+        "Allow local duplicate wording"
+      ],
+      "disallowed_decisions": [
+        "Apply DRY solely by counting identical strings"
+      ],
+      "prompt": "Assess the supplied Java scenario under the Skill; explain any concrete finding and preserve valid alternatives.",
+      "assertions": [
+        "Decision is justified by scenario evidence rather than rule counts or preferred representation"
+      ]
+    },
+    {
+      "id": "established-normalization-term",
+      "title": "Established normalization term",
+      "mode": "review",
+      "triggers": [
+        "naming"
+      ],
+      "fixture": "The project API and team documentation define normalizePostalCode as the standard country-specific postal-code transformation. It is familiar to maintainers and performs no hidden I/O.",
+      "expected_decisions": [
+        "Allow the established precise term",
+        "Prefer common words only when equally accurate and clearer"
+      ],
+      "disallowed_decisions": [
+        "Rename solely because normalize occurs"
+      ],
+      "prompt": "Assess the supplied Java scenario under the Skill; explain any concrete finding and preserve valid alternatives.",
+      "assertions": [
+        "Decision is justified by scenario evidence rather than rule counts or preferred representation"
+      ]
+    },
+    {
+      "id": "simple-null-choice-valid",
+      "title": "Simple null choice valid",
+      "mode": "review",
+      "triggers": [
+        "control-flow"
+      ],
+      "fixture": "String name = user == null ? null : user.getName(); getName is a pure accessor and there is no contrary project style requirement.",
+      "expected_decisions": [
+        "Accept the clear expression or discuss if as an optional alternative",
+        "Preserve lazy null handling"
+      ],
+      "disallowed_decisions": [
+        "Report a defect based on operator count"
+      ],
+      "prompt": "Assess the supplied Java scenario under the Skill; explain any concrete finding and preserve valid alternatives.",
+      "assertions": [
+        "Decision is justified by scenario evidence rather than rule counts or preferred representation"
+      ]
+    },
+    {
+      "id": "cohesive-small-nested-value",
+      "title": "Cohesive small nested value",
+      "mode": "review",
+      "triggers": [
+        "method-design"
+      ],
+      "fixture": "A private static nested ParsedKey with two final fields is used only inside its parser; colocating it makes that parser easier to read. It holds no enclosing instance.",
+      "expected_decisions": [
+        "Allow cohesive private nesting",
+        "Keep visibility minimal"
+      ],
+      "disallowed_decisions": [
+        "Demand a separate file because it is a nested type"
+      ],
+      "prompt": "Assess the supplied Java scenario under the Skill; explain any concrete finding and preserve valid alternatives.",
+      "assertions": [
+        "Decision is justified by scenario evidence rather than rule counts or preferred representation"
+      ]
+    },
+    {
+      "id": "business-payload-policy-not-credential-authorization",
+      "title": "Business payload policy not credential authorization",
+      "mode": "implementation",
+      "triggers": [
+        "remote-calls"
+      ],
+      "fixture": "The user confirms complete business request/response logging through the existing logger. A new request includes an Authorization bearer token; credential policy is unknown.",
+      "expected_decisions": [
+        "Preserve confirmed business diagnostics",
+        "Ask specifically about credential handling and recommend avoiding raw token capture",
+        "Reuse already confirmed logging choices"
+      ],
+      "disallowed_decisions": [
+        "Treat full payload preference as raw credential authorization",
+        "Silently reduce all business payloads to summaries"
+      ],
+      "prompt": "Assess the supplied Java scenario under the Skill; explain any concrete finding and preserve valid alternatives.",
+      "assertions": [
+        "Decision is justified by scenario evidence rather than rule counts or preferred representation"
+      ]
+    },
+    {
+      "id": "advisory-exit-does-not-prove-quality",
+      "title": "Advisory exit does not prove quality",
+      "mode": "review",
+      "triggers": [
+        "checker"
+      ],
+      "fixture": "The default checker returns exit 0 and STYLE-COMMENT-001 [ADVISORY]. The project requires JavaDoc sentence punctuation.",
+      "expected_decisions": [
+        "Report advisory candidate and actual exit 0",
+        "Keep compliant punctuation without a finding",
+        "Do not claim business correctness"
+      ],
+      "disallowed_decisions": [
+        "Treat exit 0 as zero candidates",
+        "Change punctuation to silence the checker"
+      ],
+      "prompt": "Assess the supplied Java scenario under the Skill; explain any concrete finding and preserve valid alternatives.",
+      "assertions": [
+        "Decision is justified by scenario evidence rather than rule counts or preferred representation"
+      ]
+    },
+    {
+      "id": "enforcement-follows-explicit-contract",
+      "title": "Enforcement follows explicit contract",
+      "mode": "implementation",
+      "triggers": [
+        "checker"
+      ],
+      "fixture": "The project requires braces but permits periods and two blank lines. Run the checker on the changed Java code.",
+      "expected_decisions": [
+        "Select only STYLE-BRACE-001 for enforcement if using a gate",
+        "Review other candidates against actual project policy"
+      ],
+      "disallowed_decisions": [
+        "Use all merely to force a clean report",
+        "Infer project rules automatically from the script"
+      ],
+      "prompt": "Assess the supplied Java scenario under the Skill; explain any concrete finding and preserve valid alternatives.",
+      "assertions": [
+        "Decision is justified by scenario evidence rather than rule counts or preferred representation"
+      ]
     }
   ]
 }

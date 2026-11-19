@@ -18,15 +18,11 @@ Treat class JavaDoc, method JavaDoc, top-level stage comments, and branch-local 
 
 Class JavaDoc states the class responsibility and important collaboration boundaries.
 
-Every public method and every application-defined method that owns an independent business action or processing stage requires method JavaDoc, regardless of visibility, body length, linearity, or an already clear name. Explain the purpose and any meaningful timing, input, output, state change, side effect, failure behavior, or downstream use instead of translating the method name.
+Document caller-visible contracts and independent business actions in method JavaDoc when readers need purpose, timing, inputs, absence behavior, state changes, side effects, or failures beyond what the signature and surrounding code clearly express. Prefer a brief useful description for independent business actions; body length or a clear name does not prove that these contracts are evident.
 
-Exempt only:
+Follow explicit project documentation requirements, including public API obligations. Generated declarations, complete inherited contracts, self-evident accessors, and simple helpers need no repeated description unless the project requires it. A fully self-explanatory action may omit redundant JavaDoc when no documentation obligation applies; do not invent guarantees to fill a template.
 
-- generated methods and third-party or framework signatures
-- inherited contracts that remain complete and gain no new semantics
-- private helpers with no independent action or contract, such as self-evident accessors, pure delegation, or fixed exception construction
-
-Method JavaDoc is still required for a linear independent action. It does not force stage comments inside a self-explanatory linear body, and it cannot replace required comments in a non-trivial body.
+Method JavaDoc and body comments serve different reading locations. Important hidden stage contracts still need local explanation, even when the method has JavaDoc. Conversely, a simple linear body does not need extra stage comments just because its method has documentation.
 
 Keep API, Swagger, field, and enum documentation focused on caller-visible meaning and non-obvious defaults, fallback, compatibility, units, or boundaries. Do not repeat enum values already exposed by the type or `allowableValues` unless omission creates a concrete misuse risk.
 
@@ -50,7 +46,7 @@ When a primary state change is followed by multi-line diagnostic-log assembly, k
 
 For example, after replacing an address in request parameters, a comment can explain that the following log records which address the request will use and the before/after values. Do not annotate the `put` merely to restate assignment. A clear write followed immediately by a self-explanatory one-line log does not need an extra comment. If a confirmed audit contract requires logging before the write, preserve that order and explain the contract instead of reordering for appearance.
 
-When a method begins with three or more terminating guards, add one comment before the first guard that explains the validation boundary. A smaller cluster also needs one comment when it crosses input, configuration, state, security, or error-classification boundaries. Do not comment each `if` mechanically.
+Three or more terminating entry guards are a prompt to inspect the validation boundary, not an automatic documentation obligation. Add one leading comment when readers would otherwise miss a shared prerequisite, validation order, source boundary, or error-classification rule, even with fewer guards. Clear independent required-field checks may need no cluster comment; do not add "validate parameters" to satisfy a count.
 
 Comments explain intent, boundaries, downstream use, or consequences rather than restating syntax. Do not comment self-evident assignments, pure predicates, getters, or direct calls whose full contract is visible. JavaDoc, logs, catch-local comments, and nested comments do not replace a required top-level stage comment.
 
@@ -58,7 +54,7 @@ Comments explain intent, boundaries, downstream use, or consequences rather than
 
 Before writing a body comment, ask what information it adds: identify the business reason, source boundary, ordering guarantee, compatibility role, selection policy, or failure consequence a reader would otherwise have to infer. For self-explanatory code without a documentation obligation, omit a comment that adds nothing.
 
-Apply a deletion test after drafting: would removing the comment lose useful information? Remove redundant optional body comments; rewrite required JavaDoc, guard-cluster, behavior-changing catch, and hidden-stage explanations instead of deleting their coverage. Clear names or a linear body do not exempt an independent action from JavaDoc. A comment that could be pasted above unrelated code without becoming false is too generic. Length or visual spacing alone does not justify comments.
+Apply a deletion test after drafting: would removing the comment lose useful information? Remove redundant comments when no project documentation obligation applies; retain or improve explanations of hidden contracts and required API documentation. Guard counts, method length, and control-flow counts prompt review, not filler. For behavior-changing catches, explain any otherwise hidden failure policy locally; a self-explanatory direct conversion need not repeat the code. A comment that could be pasted above unrelated code without becoming false is too generic. Length or visual spacing alone does not justify comments.
 
 One precise comment can explain several statements enforcing the same invariant. Independent preparation, remote execution, persistence, or response stages still need their own explanations when their hidden contracts differ. Improve names or types when they express the missing fact better; do not extract trivial helpers merely to replace comments.
 
@@ -90,7 +86,7 @@ Examples below assume the stated behavior is established by the code and contrac
 
 ## Sources And Local Choices
 
-These rules adapt Robert C. Martin's public [redundant-comment guidance](https://www.informit.com/articles/article.aspx?p=1327761), [poorly-written-comment guidance](https://www.informit.com/articles/article.aspx?p=1328957), and [obsolete-comment guidance](https://www.informit.com/articles/article.aspx?p=1326509), alongside [Google's JavaDoc guidance](https://google.github.io/styleguide/javaguide.html#s7-javadoc) and [Oracle's API documentation guidance](https://www.oracle.com/technical-resources/articles/java/javadoc-tool.html). They support informative, concise wording, accurate maintenance, and caller-visible contracts. Reading those pages is not a task prerequisite. This Skill's independent-action JavaDoc coverage and punctuation preferences are local choices, not universal requirements attributed to these sources.
+These rules adapt Robert C. Martin's public [redundant-comment guidance](https://www.informit.com/articles/article.aspx?p=1327761), [poorly-written-comment guidance](https://www.informit.com/articles/article.aspx?p=1328957), and [obsolete-comment guidance](https://www.informit.com/articles/article.aspx?p=1326509), alongside [Google's JavaDoc guidance](https://google.github.io/styleguide/javaguide.html#s7-javadoc) and [Oracle's API documentation guidance](https://www.oracle.com/technical-resources/articles/java/javadoc-tool.html). They support informative, concise wording, accurate maintenance, and caller-visible contracts. Reading those pages is not a task prerequisite. The preference for brief independent-action JavaDoc and punctuation is local; information value and project documentation obligations decide coverage, not a universal comment quota.
 
 ## Describe The Current Contract
 
@@ -128,4 +124,4 @@ An unsupported claim about retries, state, ordering, compatibility, or failure g
 
 Absent a stronger user or formal repository rule, Java comments, including JavaDoc and method-body comments, do not end with `。` or `.`, and exactly one blank line separates method declarations. These are default preferences: follow the project's formatter and documentation requirements when they differ. Inspect changed-scope checker reports against that authority; an overridden preference is not a violation.
 
-Missing method JavaDoc is `P2` when it hides lifecycle, state, side effects, failure policy, timing, or another contract. Otherwise use `P3` for an independently named action. Missing stage or branch comments are `P2` when they hide ordering, compatibility, selection, error classification, side effects, or failure guarantees; use `P3` when they only add local reading cost. A historical comparison is `P2` when it misstates current compatibility or can cause a wrong change, and `P3` when it only distracts from an otherwise clear current rule. Punctuation, method spacing, and wrapping findings are at most `P3`.
+Missing method documentation is `P2` when an otherwise hidden lifecycle, state, side-effect, failure, or timing contract could cause misuse. Use `P3` for a concrete local ambiguity or applicable documentation-rule violation; a self-explanatory method without redundant JavaDoc is not automatically a finding. Missing stage or branch comments are `P2` when they hide ordering, compatibility, selection, error classification, side effects, or failure guarantees; use `P3` when they only add local reading cost. A historical comparison is `P2` when it misstates current compatibility or can cause a wrong change, and `P3` when it only distracts from an otherwise clear current rule. Punctuation, method spacing, and wrapping findings are at most `P3`.

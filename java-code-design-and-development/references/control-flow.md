@@ -4,28 +4,23 @@ Read when scoped code or proposed behavior needs assessment of a ternary, branch
 
 ## Ternary Expressions
 
-Keep a ternary only when it is a short, pure value choice and both branches are immediately obvious:
+Use a ternary for a short value choice when the condition, absence/default behavior, and both results are easy to read. Comparisons, null checks, or a simple accessor do not automatically make it unclear:
 
 ```java
 String statusText = enabled ? "启用" : "停用";
-```
-
-Prefer a braced `if` when the expression combines assignment with comparison, null handling, field access, or a method call; when either branch performs a business action, conversion, exception construction, or other side effect; or when the expression is nested or visually long. A short line is not automatically a readable line:
-
-```java
-String userName = null;
-if (user != null) {
-    userName = user.getName();
-}
-```
-
-Do not recommend this form merely because it fits one line:
-
-```java
 String name = user == null ? null : user.getName();
 ```
 
-The quality finding is semantic. Report `P2` when a ternary hides null, default, error, or side-effect behavior that can lead to a wrong change; use `P3` when it only makes a local expression harder to scan. Do not mechanically flag every ternary.
+A braced `if` may be clearer with long receivers, nested choices, multiple actions, non-obvious defaults, or side effects. It is also appropriate when the project or user prefers it. Compare the complete alternatives, including extra mutable state and distant assignment; do not grade by operator count or line length alone.
+
+```java
+String customerBranch = null;
+if (customerBranchByWarehouseCodeMap != null) {
+    customerBranch = customerBranchByWarehouseCodeMap.get(addressCode);
+}
+```
+
+Preserve evaluation count, lazy branch evaluation, null behavior, and side effects when changing form. Report P2 for evidenced hidden or altered behavior and P3 for a concrete reading problem or applicable style requirement. Another equally clear form is an optional suggestion.
 
 ## Keep One Processing Path Together
 
@@ -75,7 +70,7 @@ The enhanced-for source expression is evaluated once before traversal, not once 
 
 Keep the assignment at the original execution point and inside the same guard, transaction, lock, `try`, and resource scope. Preserve evaluation count, order, null and exception behavior, and lazy consumption. A named cursor, stream, or lazy iterable is not a materialized snapshot: do not collect it into a List, pre-read all pages, or move it out of its owned resource scope merely for this preference. Calls in `while` or classic-for conditions may intentionally fetch another page or observe changing state on each iteration; never hoist them as though they were an enhanced-for source
 
-Implementation and diff review cover added or changed task-owned traversal; explicit analysis or review of existing traversal includes the requested target. A preference-only issue is `P3`, subordinate to formal repository rules; actual ordering, resource, or failure risks follow impact-based severity. Review the acquisition boundary during final control-flow readback even when the style checker passes
+Implementation and diff review cover added or changed task-owned traversal; explicit analysis or review of existing traversal includes the requested target. An optional preference is a suggestion; an evidenced local reading problem or applicable style-rule violation is at most `P3`; actual ordering, resource, or failure risks follow impact-based severity. Review the acquisition boundary during final control-flow readback even when the style checker passes
 
 ## Final Control-Flow Review
 

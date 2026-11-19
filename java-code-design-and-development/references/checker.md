@@ -1,6 +1,6 @@
 # Deterministic Style Checker
 
-Read this reference when using `--base`, `--line-range`, or `--exclude`, when scope cannot be established, or when checker errors, exact CLI behavior, or rule identifiers need investigation. Default worktree and explicit-path checks can run without loading it.
+Read this reference when using `--base`, `--line-range`, or `--exclude`, when scope cannot be established, or when checker errors, exact CLI behavior, or rule identifiers need investigation. Default advisory checks can run without loading it; read this reference before choosing enforcement.
 
 ## Commands
 
@@ -43,7 +43,11 @@ Message rewrites require semantic comparison with the reachable failure conditio
 
 Optional alternative designs do not automatically constitute findings; semantic review must identify an evidenced violation or concrete problem before assigning severity. Guidance metadata validation does not check Git commit existence, ancestry, remote freshness, or infrastructure changes.
 
-The checker applies fixed style rules and does not read repository instructions or formatter configuration. A punctuation, spacing, or brace diagnostic is a candidate, not proof of a project violation. If an explicit user rule or formal project standard overrides that preference, keep the required form, explain the diagnostic, and do not rewrite compliant code or report a preference-only finding. Report raw checker results separately from the reviewed disposition; do not claim exit `0` when it returned `1`.
+The checker detects fixed patterns and does not read repository instructions or formatter configuration. By default every result is `ADVISORY` and exit 0 can include candidates. Inspect the output; zero is not proof of correct Java or complete documentation. Select only rules confirmed by the user or project with repeatable `--enforce-rule RULE_ID`; selected findings are `ENFORCED` and cause exit 1. Other candidates remain visible. Unknown rule IDs are usage errors (exit 2).
+
+For example, a project that requires braces but permits JavaDoc periods can use `--enforce-rule STYLE-BRACE-001`. Do not enforce COMMENT merely to obtain a uniform result. `--enforce-rule all` explicitly restores the previous fail-on-any-finding behavior. Existing scope arguments and rule identifiers are unchanged, but the default exit behavior has changed: existing CI/hooks that intentionally require every rule must add that option. Do not modify hooks without task authorization.
+
+COMMENT, METHOD, and BRACE are style-policy checks. CATCH, GUARD, and INTENT are structural prompts for semantic review; their thresholds cannot prove that an explanation is needed or useful. Enforce their presence only if that particular mechanical requirement is explicitly binding, not merely because the project asks for readable comments. No flag establishes correctness or assigns P2/P3. Report selected enforcement, actual exit code, candidate count, and reviewed disposition separately.
 
 Parameter meaning, object properties versus invocation or traversal context, flag-removal equivalence, and the benefit of nested classes or enums require semantic review. The checker does not count boolean literals to force enums or wrappers, reject all nested types, or establish that a project hint's named API or offline-build assumptions still apply.
 
@@ -65,8 +69,8 @@ Restriction provenance and applicability, units and reached-limit outcomes, shar
 
 End-to-end field provenance and final assignments, loss of identity/cardinality, concrete absence shapes, comparable units, mixed versions, representation round trips, purpose-specific predicates, hidden output parameters, and exception-boundary changes require semantic review. The checker does not prove them from setters, class names, test counts, or log presence, and does not add keyword rules for these decisions.
 
-- `0`: no violations for the selected scope
-- `1`: one or more violations, with file, line, rule identifier, and evidence
+- `0`: scan completed without enforced findings; advisory candidates may remain
+- `1`: at least one finding matches an explicitly enforced rule; reports retain file, line, rule and evidence
 - `2`: usage, input, path, Git, or environment error
 
-Excluding every selected Java file is clean and must produce a clear message. Run semantic review separately for lifecycle, naming, and comment-quality decisions that are outside deterministic checks.
+Excluding every selected Java file produces no findings and must produce a clear message. Run semantic review separately for lifecycle, naming, and comment-quality decisions that are outside deterministic checks.

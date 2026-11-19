@@ -68,9 +68,9 @@ Grade omissions by impact: a lost condition or misleading diagnosis that causes 
 
 ## Message Visibility At The Failure Site
 
-Keep a fixed caller-visible message literal at each throw or error-construction site when a private constant exists only to reuse that wording. The local branch should expose the guard, stable error category, exact message, retained cause, and recovery advice together so a reader can verify that they agree without following another symbol.
+Compare a fixed message at its throw site with a constant or error factory. Direct wording can make the guard, category, cause, and recovery easy to verify; a shared catalog or factory can keep one error contract consistent across callers. Choose by both reading and maintenance cost under [method-design.md](method-design.md).
 
-Do not retain a message constant merely because it has multiple uses, a long descriptive name, or keeps wording centralized. Reuse of one message also does not prove that all branches have the same cause or recovery action; apply the alignment check above at every use and split the message when those contracts differ.
+Multiple uses or a long name alone do not justify a constant; a demonstrated requirement to evolve one shared error contract consistently does. Reuse of one message also does not prove that all branches have the same cause or recovery action; apply the alignment check above at every use and split the message when those contracts differ.
 
 This rule does not apply to stable error-code enum members, protocol or persistence identifiers, framework-required compile-time values, localization keys, externally governed public identifiers, or established structured message catalogs. Follow a repository-mandated localization or error-catalog mechanism when it owns the caller contract.
 
@@ -123,7 +123,7 @@ catch (StorageException exception) {
 
 ## Control-Flow Comments
 
-Keep the `SKILL.md` catch-comment rule independent from message quality. When a catch falls back, retries, suppresses, continues, compensates, or converts an exception, its local comment names the failed operation, the next path, and the guarantee skipped or preserved. Logs and exception messages describe audiences and diagnosis; they do not explain hidden control-flow policy by themselves. Transparent direct rethrows are exempt; do not require comments for unchanged catch behavior or every return mechanically.
+Keep the `SKILL.md` catch-comment rule independent from message quality. When a catch falls back, retries, suppresses, continues, compensates, or converts an exception, explain the failed operation, next path, and skipped or preserved guarantee locally when those facts are not already clear. Logs and exception messages describe audiences and diagnosis; they do not explain hidden control-flow policy by themselves. Transparent direct rethrows and self-explanatory direct conversions need no redundant comment; do not require comments for unchanged catch behavior or every return mechanically.
 
 ## Review Severity
 
